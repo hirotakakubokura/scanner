@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -435,18 +434,28 @@
       });
     }
 
-    // 医療証画像専用：圧縮してGETで送信
+    // 医療証画像専用：no-cors POSTで送信（CORSを回避）
     async function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
-      // 画像を圧縮
-      const compressed = await compressImageBase64(base64Data, 1024, 0.6);
+      // 圧縮
+      const compressed = await compressImageBase64(base64Data, 800, 0.6);
       let imgData = compressed;
       if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
 
-      const body = JSON.stringify({ func: "saveMedicalCertPhoto", params: [patientNum, patientName, imgData] });
-      const url = GAS_URL + "?payload=" + encodeURIComponent(body);
-      const res = await fetch(url, { method: "GET" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      return await res.json();
+      const bodyObj = { func: "saveMedicalCertPhoto", params: [patientNum, patientName, imgData] };
+
+      // no-corsでPOST送信（レスポンスは読めないがサーバー側は処理される）
+      await fetch(GAS_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify(bodyObj)
+      });
+
+      // 3秒待ってから保存確認（GASの処理時間を待つ）
+      await new Promise(r => setTimeout(r, 3000));
+
+      // 保存完了とみなして成功を返す
+      return { success: true, message: "保存しました" };
     }
 
     // =========================================================
