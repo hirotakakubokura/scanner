@@ -435,63 +435,46 @@
     }
 
     // 医療証画像専用：3段階方式
-    // Step1: GETでAI鮮明度チェック（小さい画像で判定）→NG なら再撮影
-    // Step2: OKなら通常POSTで保存（レスポンス取得を試みる）
-    // Step3: POSTがCORSで失敗したらno-corsで再送（保存のみ・レスポンスなし）
+    // 医療証画像専用：GETで送信（URLに収まるまで圧縮を繰り返す）
     async function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
+      // 圧縮レベルを段階的に上げてURLに収まるサイズを探す
+      const levels = [
+        { width: 640, quality: 0.5 },
+        { width: 480, quality: 0.4 },
+        { width: 360, quality: 0.35 },
+        { width: 280, quality: 0.3 },
+        { width: 200, quality: 0.25 },
+      ];
 
-      // ── Step1: AI鮮明度チェック（小さい画像・GET）──
-      try {
-        const small = await compressImageBase64(base64Data, 400, 0.5);
-        let smallData = small;
-        if (smallData.indexOf("base64,") !== -1) smallData = smallData.split("base64,")[1];
-        const checkBody = JSON.stringify({ func: "checkImageQuality", params: [smallData] });
-        const checkUrl = GAS_URL + "?payload=" + encodeURIComponent(checkBody);
-        if (checkUrl.length <= 8000) {
-          const checkRes = await fetch(checkUrl, { method: "GET" });
-          if (checkRes.ok) {
-            const checkResult = await checkRes.json();
-            if (checkResult && checkResult.isValid === false) {
-              throw new Error("再撮影が必要です: " + (checkResult.reason || "画像が不鮮明です"));
-            }
-          }
-        }
-      } catch(e) {
-        if (e.message.indexOf("再撮影") !== -1) throw e;
-        console.log("AI check skipped:", e.message);
-      }
+      for (const lv of levels) {
+        const compressed = await compressImageBase64(base64Data, lv.width, lv.quality);
+        let imgData = compressed;
+        if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
 
-      // ── Step2: 通常POSTで保存（レスポンス取得を試みる）──
-      const compressed = await compressImageBase64(base64Data, 800, 0.6);
-      let imgData = compressed;
-      if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
-      const postBody = JSON.stringify({ func: "saveMedicalCertPhoto", params: [patientNum, patientName, imgData] });
-
-      try {
-        const res = await fetch(GAS_URL, {
-          method: "POST",
-          redirect: "follow",
-          headers: { "Content-Type": "text/plain" },
-          body: postBody
+        const body = JSON.stringify({
+          func: "saveMedicalCertPhoto",
+          params: [patientNum, patientName, imgData]
         });
-        if (res.ok) {
-          const result = await res.json();
-          // OCR結果・AI判定結果がある場合はそのまま返す
-          return result;
+        const url = GAS_URL + "?payload=" + encodeURIComponent(body);
+
+        console.log(`圧縮試行: ${lv.width}px q${lv.quality} → URL長: ${url.length}`);
+
+        if (url.length > 7500) continue; // まだ長い→次へ
+
+        // GETで送信
+        const res = await fetch(url, { method: "GET" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const result = await res.json();
+
+        // AI判定NGなら再撮影を促す
+        if (result && result.needsRetry === true) {
+          throw new Error("再撮影が必要です: " + (result.message || "画像が不鮮明です"));
         }
-      } catch(e) {
-        console.log("POST with response failed, falling back to no-cors:", e.message);
+
+        return result;
       }
 
-      // ── Step3: no-corsフォールバック（保存のみ）──
-      await fetch(GAS_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain" },
-        body: postBody
-      });
-      await new Promise(r => setTimeout(r, 3000));
-      return { success: true, message: "保存しました（解析結果は取得できませんでした）" };
+      throw new Error("画像を十分に圧縮できませんでした。もう少し近くで撮影してください。");
     }
 
     // =========================================================
