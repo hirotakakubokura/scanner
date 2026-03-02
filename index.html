@@ -435,15 +435,16 @@
     }
 
     // 医療証画像専用：3段階方式
-    // 医療証画像専用：GETで送信（URLに収まるまで圧縮を繰り返す）
+    // 医療証画像専用：GETで送信（URLに収まるまで段階的に圧縮）
     async function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
       // 圧縮レベルを段階的に上げてURLに収まるサイズを探す
       const levels = [
-        { width: 640, quality: 0.5 },
+        { width: 600, quality: 0.5 },
         { width: 480, quality: 0.4 },
         { width: 360, quality: 0.35 },
         { width: 280, quality: 0.3 },
         { width: 200, quality: 0.25 },
+        { width: 150, quality: 0.2 },
       ];
 
       for (const lv of levels) {
@@ -459,7 +460,7 @@
 
         console.log(`圧縮試行: ${lv.width}px q${lv.quality} → URL長: ${url.length}`);
 
-        if (url.length > 7500) continue; // まだ長い→次へ
+        if (url.length > 7800) continue; // まだ長い→次へ
 
         // GETで送信
         const res = await fetch(url, { method: "GET" });
@@ -474,7 +475,7 @@
         return result;
       }
 
-      throw new Error("画像を十分に圧縮できませんでした。もう少し近くで撮影してください。");
+      throw new Error("画像が大きすぎます。もう少し近づいて撮影してください。");
     }
 
     // =========================================================
@@ -939,23 +940,47 @@
           if (under18Patients.length > 0) showMedicalCertForUnder18(); else doRegister();
         } else { document.getElementById("selection-ui").style.display = "flex"; startQrCamera("after-ocr"); isScanning = true; }
       };
+
       if (!result) {
-        title.textContent = "❌ エラー"; content.innerHTML = "データの取得に失敗しました";
+        title.textContent = "❌ エラー";
+        title.style.color = "#e53935";
+        content.innerHTML = "データの取得に失敗しました";
         btn.textContent = "閉じる"; btn.onclick = closeAndNext; modal.style.display = "block"; return;
       }
+
       if (result.success === true) {
-        title.textContent = "✅ 保存完了"; title.style.color = "#4FC3F7";
-        let html = '<div style="font-size:1.15em;font-weight:900;margin-bottom:12px;color:#4FC3F7;">医療証を保存しました！</div>';
-        if (result.futanNumber || result.jukyushaNumber) {
-          html += '<div style="margin-top:12px;padding-top:12px;border-top:2px solid #FFD54F;"><div style="font-weight:900;margin-bottom:8px;">【AI解析結果】</div>';
-          if (result.futanNumber) html += `<div>負担番号: <strong>${escapeHtml(result.futanNumber)}</strong></div>`;
-          if (result.jukyushaNumber) html += `<div>受給者番号: <strong>${escapeHtml(result.jukyushaNumber)}</strong></div>`;
+        title.textContent = "✅ 保存完了";
+        title.style.color = "#4FC3F7";
+
+        let html = '<div style="font-size:1.1em;font-weight:900;margin-bottom:14px;color:#4FC3F7;">📁 医療証を保存しました！</div>';
+
+        // AI解析結果セクション
+        const hasOcr = result.futanNumber || result.jukyushaNumber || result.validFrom || result.validTo;
+        if (hasOcr) {
+          html += '<div style="margin-top:10px;padding:12px;background:#E3F2FD;border-radius:10px;border-left:5px solid #4FC3F7;">';
+          html += '<div style="font-weight:900;margin-bottom:10px;color:#01579B;font-size:1.05em;">🤖 AI解析結果</div>';
+          if (result.futanNumber)    html += `<div style="margin:6px 0;">📋 負担番号：<strong style="color:#1565C0;font-size:1.1em;">${escapeHtml(result.futanNumber)}</strong></div>`;
+          if (result.jukyushaNumber) html += `<div style="margin:6px 0;">🪪 受給者番号：<strong style="color:#1565C0;font-size:1.1em;">${escapeHtml(result.jukyushaNumber)}</strong></div>`;
+          if (result.validFrom)      html += `<div style="margin:6px 0;">📅 有効開始：<strong style="color:#2E7D32;">${escapeHtml(result.validFrom)}</strong></div>`;
+          if (result.validTo)        html += `<div style="margin:6px 0;">📅 有効終了：<strong style="color:#C62828;">${escapeHtml(result.validTo)}</strong></div>`;
+          html += '</div>';
+        } else {
+          html += '<div style="margin-top:10px;padding:10px;background:#FFF9C4;border-radius:10px;color:#795548;font-size:0.95em;">';
+          html += '⚠️ AI解析結果が取得できませんでした。<br>番号は手動でご確認ください。';
           html += '</div>';
         }
-        content.innerHTML = html; btn.textContent = "OK"; btn.onclick = closeAndNext; modal.style.display = "block"; return;
+
+        content.innerHTML = html;
+        btn.textContent = "OK";
+        btn.onclick = closeAndNext;
+        modal.style.display = "block";
+        return;
       }
+
+      // エラー
       title.textContent = "❌ エラー";
-      content.innerHTML = escapeHtml(result.message || "不明なエラー");
+      title.style.color = "#e53935";
+      content.innerHTML = `<div style="color:#c62828;">${escapeHtml(result.message || "不明なエラー")}</div>`;
       btn.textContent = "閉じる"; btn.onclick = closeAndNext; modal.style.display = "block";
     }
 
