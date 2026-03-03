@@ -458,13 +458,20 @@
 
       // GASがHtmlOutputで返す場合、テキストをJSONとしてパース
       const text = await res.text();
+      console.log("GAS response:", text.substring(0, 300));
+
       let result;
       try {
         result = JSON.parse(text);
       } catch(e) {
         // HTMLタグが含まれている場合は取り除く
         const clean = text.replace(/<[^>]*>/g, "").trim();
-        result = JSON.parse(clean);
+        try {
+          result = JSON.parse(clean);
+        } catch(e2) {
+          // パースできない場合はそのまま表示してデバッグ
+          throw new Error("GASエラー内容: " + clean.substring(0, 200));
+        }
       }
 
       if (result && result.needsRetry === true) {
