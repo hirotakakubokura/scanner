@@ -435,47 +435,43 @@
     }
 
     // 医療証画像専用：3段階方式
-    // 医療証画像専用：GETで送信（URLに収まるまで段階的に圧縮）
+    // 医療証画像専用：POSTでGASに送信（HtmlOutput経由でCORS回避）
     async function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
-      // 圧縮レベルを段階的に上げてURLに収まるサイズを探す
-      const levels = [
-        { width: 600, quality: 0.5 },
-        { width: 480, quality: 0.4 },
-        { width: 360, quality: 0.35 },
-        { width: 280, quality: 0.3 },
-        { width: 200, quality: 0.25 },
-        { width: 150, quality: 0.2 },
-      ];
+      // 画像を圧縮
+      const compressed = await compressImageBase64(base64Data, 800, 0.6);
+      let imgData = compressed;
+      if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
 
-      for (const lv of levels) {
-        const compressed = await compressImageBase64(base64Data, lv.width, lv.quality);
-        let imgData = compressed;
-        if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
+      const body = JSON.stringify({
+        func: "saveMedicalCertPhoto",
+        params: [patientNum, patientName, imgData]
+      });
 
-        const body = JSON.stringify({
-          func: "saveMedicalCertPhoto",
-          params: [patientNum, patientName, imgData]
-        });
-        const url = GAS_URL + "?payload=" + encodeURIComponent(body);
+      // GASはHtmlOutputでCORSを回避できる
+      const res = await fetch(GAS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: body
+      });
 
-        console.log(`圧縮試行: ${lv.width}px q${lv.quality} → URL長: ${url.length}`);
+      if (!res.ok) throw new Error("HTTP " + res.status);
 
-        if (url.length > 7800) continue; // まだ長い→次へ
-
-        // GETで送信
-        const res = await fetch(url, { method: "GET" });
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        const result = await res.json();
-
-        // AI判定NGなら再撮影を促す
-        if (result && result.needsRetry === true) {
-          throw new Error("再撮影が必要です: " + (result.message || "画像が不鮮明です"));
-        }
-
-        return result;
+      // GASがHtmlOutputで返す場合、テキストをJSONとしてパース
+      const text = await res.text();
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch(e) {
+        // HTMLタグが含まれている場合は取り除く
+        const clean = text.replace(/<[^>]*>/g, "").trim();
+        result = JSON.parse(clean);
       }
 
-      throw new Error("画像が大きすぎます。もう少し近づいて撮影してください。");
+      if (result && result.needsRetry === true) {
+        throw new Error("再撮影が必要です: " + (result.message || "画像が不鮮明です"));
+      }
+
+      return result;
     }
 
     // =========================================================
