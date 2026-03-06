@@ -436,58 +436,22 @@
 
     // 医療証画像専用：3段階方式
     // 医療証画像専用：POSTでGASに送信（HtmlOutput経由でCORS回避）
-    // 医療証画像専用：JSONP方式（SafariのfetchブロックをJSONPで回避）
-    function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
-      return new Promise(async (resolve, reject) => {
-        try {
-          const compressed = await compressImageBase64(base64Data, 400, 0.3);
-          let imgData = compressed;
-          if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
-
-          // コールバック関数名をユニークに
-          const cbName = "gasCallback_" + Date.now();
-
-          const body = JSON.stringify({
-            func: "saveMedicalCertPhoto",
-            params: [String(patientNum), String(patientName), imgData]
-          });
-
-          // タイムアウト30秒
-          const timer = setTimeout(() => {
-            delete window[cbName];
-            reject(new Error("タイムアウト（30秒）"));
-          }, 30000);
-
-          // GASから呼ばれるコールバック
-          window[cbName] = function(result) {
-            clearTimeout(timer);
-            delete window[cbName];
-            const s = document.getElementById("jsonp-script-" + cbName);
-            if (s) s.remove();
-            if (result && result.needsRetry === true) {
-              reject(new Error("再撮影が必要です: " + (result.message || "画像が不鮮明です")));
-            } else {
-              resolve(result);
-            }
-          };
-
-          // scriptタグでGASを呼ぶ（CORSを回避）
-          const url = GAS_URL + "?callback=" + cbName + "&payload=" + encodeURIComponent(body);
-          const script = document.createElement("script");
-          script.id = "jsonp-script-" + cbName;
-          script.src = url;
-          script.onerror = function() {
-            clearTimeout(timer);
-            delete window[cbName];
-            script.remove();
-            reject(new Error("スクリプト読み込みエラー"));
-          };
-          document.body.appendChild(script);
-
-        } catch(err) {
-          reject(err);
-        }
+    // 医療証画像専用：画像なしテスト版（原因切り分け用）
+    async function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
+      // ★テスト：画像データなしで番号と名前だけ送信してGAS疎通確認
+      alert("テスト送信開始: " + patientNum + " / " + patientName);
+      const body = JSON.stringify({
+        func: "getTodayCheckedInNums",
+        params: []
       });
+      const url = GAS_URL + "?payload=" + encodeURIComponent(body);
+      alert("URL長: " + url.length);
+      const res = await fetch(url, { method: "GET", mode: "cors", credentials: "omit" });
+      alert("ステータス: " + res.status);
+      const text = await res.text();
+      alert("応答: " + text.substring(0, 100));
+      // ダミー成功を返す
+      return { success: true, message: "テスト成功", futanNumber: "テスト", jukyushaNumber: "テスト", validFrom: "", validTo: "" };
     }
 
     // =========================================================
