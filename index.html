@@ -436,48 +436,58 @@
 
     // 医療証画像専用：3段階方式
     // 医療証画像専用：POSTでGASに送信（HtmlOutput経由でCORS回避）
-    // 医療証画像専用：デバッグ版
-    async function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
-      try {
-        const compressed = await compressImageBase64(base64Data, 400, 0.3);
-        let imgData = compressed;
-        if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
+    // 医療証画像専用：JSONP方式（SafariのfetchブロックをJSONPで回避）
+    function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
+      return new Promise(async (resolve, reject) => {
+        try {
+          const compressed = await compressImageBase64(base64Data, 400, 0.3);
+          let imgData = compressed;
+          if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
 
-        alert("【デバッグ1】圧縮後base64長: " + imgData.length + "\n（100000以下なら送信可能）");
+          // コールバック関数名をユニークに
+          const cbName = "gasCallback_" + Date.now();
 
-        const body = JSON.stringify({
-          func: "saveMedicalCertPhoto",
-          params: [String(patientNum), String(patientName), imgData]
-        });
+          const body = JSON.stringify({
+            func: "saveMedicalCertPhoto",
+            params: [String(patientNum), String(patientName), imgData]
+          });
 
-        const url = GAS_URL + "?payload=" + encodeURIComponent(body);
-        alert("【デバッグ2】URL長: " + url.length + "\n送信開始...");
+          // タイムアウト30秒
+          const timer = setTimeout(() => {
+            delete window[cbName];
+            reject(new Error("タイムアウト（30秒）"));
+          }, 30000);
 
-        const res = await fetch(url, {
-          method: "GET",
-          redirect: "follow",
-          mode: "cors",
-          credentials: "omit"
-        });
-        alert("【デバッグ3】HTTPステータス: " + res.status);
+          // GASから呼ばれるコールバック
+          window[cbName] = function(result) {
+            clearTimeout(timer);
+            delete window[cbName];
+            const s = document.getElementById("jsonp-script-" + cbName);
+            if (s) s.remove();
+            if (result && result.needsRetry === true) {
+              reject(new Error("再撮影が必要です: " + (result.message || "画像が不鮮明です")));
+            } else {
+              resolve(result);
+            }
+          };
 
-        if (!res.ok) throw new Error("HTTP " + res.status);
+          // scriptタグでGASを呼ぶ（CORSを回避）
+          const url = GAS_URL + "?callback=" + cbName + "&payload=" + encodeURIComponent(body);
+          const script = document.createElement("script");
+          script.id = "jsonp-script-" + cbName;
+          script.src = url;
+          script.onerror = function() {
+            clearTimeout(timer);
+            delete window[cbName];
+            script.remove();
+            reject(new Error("スクリプト読み込みエラー"));
+          };
+          document.body.appendChild(script);
 
-        const text = await res.text();
-        alert("【デバッグ4】GAS応答（先頭200字）:\n" + text.substring(0, 200));
-
-        const result = JSON.parse(text);
-
-        if (result && result.needsRetry === true) {
-          throw new Error("再撮影が必要です: " + (result.message || "画像が不鮮明です"));
+        } catch(err) {
+          reject(err);
         }
-
-        return result;
-
-      } catch(err) {
-        alert("【デバッグERROR】\n" + err.name + ": " + err.message);
-        throw err;
-      }
+      });
     }
 
     // =========================================================
