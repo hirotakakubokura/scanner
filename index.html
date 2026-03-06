@@ -410,41 +410,32 @@
       });
     }
 
-    // 医療証画像専用：GAS bridgeページにpostMessageで送信
+    // 医療証画像専用：FormData POST方式
+    // multipart/form-dataはSafariがシンプルリクエストとして扱いプリフライトなしで送れる
     async function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
       const compressed = await compressImageBase64(base64Data, 800, 0.6);
+      let imgData = compressed;
+      if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
 
-      const gasFrame = document.getElementById("gas-bridge-frame");
-      if (!gasFrame || !gasFrame.contentWindow) {
-        throw new Error("GAS連携フレームが準備できていません。しばらく待ってから再試行してください。");
-      }
+      const formData = new FormData();
+      formData.append("func", "saveMedicalCertPhoto");
+      formData.append("patientNum", String(patientNum));
+      formData.append("patientName", String(patientName));
+      formData.append("imageData", imgData);
 
-      return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => {
-          window.removeEventListener("message", handler);
-          reject(new Error("タイムアウト（60秒）：GASの応答がありませんでした"));
-        }, 60000);
-
-        function handler(event) {
-          const msg = event.data;
-          if (!msg || msg.type !== "medcertResult") return;
-          clearTimeout(timer);
-          window.removeEventListener("message", handler);
-          if (msg.result && msg.result.needsRetry === true) {
-            reject(new Error("再撮影が必要です: " + (msg.result.message || "画像が不鮮明です")));
-          } else {
-            resolve(msg.result);
-          }
-        }
-        window.addEventListener("message", handler);
-
-        gasFrame.contentWindow.postMessage({
-          type: "saveMedicalCert",
-          patientNum: String(patientNum),
-          patientName: String(patientName),
-          imageData: compressed
-        }, "*");
+      const res = await fetch(GAS_URL, {
+        method: "POST",
+        body: formData
       });
+
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const text = await res.text();
+      const clean = text.replace(/<[^>]*>/g, "").trim();
+      const result = JSON.parse(clean);
+      if (result && result.needsRetry === true) {
+        throw new Error("再撮影が必要です: " + (result.message || "画像が不鮮明です"));
+      }
+      return result;
     }
     const qrVideoEl    = document.getElementById("qr-video");
     const canvas       = document.getElementById("canvas");
