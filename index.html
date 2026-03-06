@@ -453,7 +453,12 @@
         const url = GAS_URL + "?payload=" + encodeURIComponent(body);
         alert("【デバッグ2】URL長: " + url.length + "\n送信開始...");
 
-        const res = await fetch(url, { method: "GET" });
+        const res = await fetch(url, {
+          method: "GET",
+          redirect: "follow",
+          mode: "cors",
+          credentials: "omit"
+        });
         alert("【デバッグ3】HTTPステータス: " + res.status);
 
         if (!res.ok) throw new Error("HTTP " + res.status);
