@@ -64,8 +64,6 @@
       user-select: none;
     }
     .big-btn:active { transform: translateY(1px); }
-
-    /* 検索UI */
     #search-ui {
       position: fixed; inset: 0; background: rgba(0,0,0,0.8);
       display: none; align-items: center; justify-content: center;
@@ -90,8 +88,6 @@
     }
     .row-btns .ok { background: var(--sky-blue); color: #fff; }
     .row-btns .ng { background: #999; color: #fff; flex: 0 0 auto; padding: 14px 18px; }
-
-    /* 個人確認 */
     #personal-confirm-ui {
       position: fixed; inset: 0; background: var(--bg-color);
       display: none; flex-direction: column; align-items: center;
@@ -123,8 +119,6 @@
     .personal-btn:active { transform: translateY(6px); box-shadow: 0 4px 0 rgba(0,0,0,0.18); }
     .personal-btn.yes { background: var(--accent-orange); color: #fff; }
     .personal-btn.no  { background: #ddd; color: #666; }
-
-    /* 家族選択 */
     #selection-ui {
       position: fixed; inset: 0; background: var(--bg-color);
       display: none; flex-direction: column; align-items: center;
@@ -172,16 +166,12 @@
       background-size: contain; background-repeat: no-repeat;
       background-position: center; margin-top: 8px; flex: 0 0 auto;
     }
-
-    /* ローディング */
     .loading-overlay {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       display: none; align-items: center; justify-content: center;
       flex-direction: column; background: rgba(255,255,255,0.9);
       z-index: 999999; font-size: 20px; color: #333;
     }
-
-    /* 医療証UI */
     .medical-cert-ui {
       position: fixed; inset: 0; background-color: var(--bg-color);
       display: none; flex-direction: column; align-items: center;
@@ -240,8 +230,6 @@
       background: white; font-size: 1.15em; font-weight: 900; cursor: pointer;
     }
     .action-btn.primary { background: var(--accent-orange); color: white; border-color: var(--accent-orange); }
-
-    /* OCR結果モーダル */
     #ocr-result-modal {
       position: fixed; inset: 0; background: rgba(0,0,0,0.8);
       display: none; z-index: 10000; padding: 16px; box-sizing: border-box;
@@ -260,8 +248,6 @@
       background: var(--sky-blue); color: white; border: none; padding: 16px 24px;
       font-size: 1.2em; border-radius: 14px; cursor: pointer; font-weight: 900; width: 100%;
     }
-
-    /* カメラゲート */
     #camera-gate {
       position: fixed; inset: 0; background: rgba(0,0,0,0.65);
       display: none; z-index: 12000; align-items: center;
@@ -285,8 +271,13 @@
   </style>
 </head>
 <body>
+  <!-- GAS bridge iframe: google.script.runを使うためGASページを非表示で読み込む -->
+  <iframe
+    id="gas-bridge-frame"
+    src="https://script.google.com/macros/s/AKfycbz3LgHl80x5jiZrabVYNFSbRnwSE3O_gYJrtvEtBOezzk7uPUTNWgsfPMBOedO31ioDmA/exec?mode=bridge"
+    style="display:none; width:1px; height:1px; position:absolute; left:-9999px; top:-9999px;"
+  ></iframe>
   <div class="header">👑　都筑キッズデンタルランド受付　👑</div>
-
   <div class="main">
     <div id="video-container">
       <canvas id="canvas"></canvas>
@@ -297,7 +288,6 @@
       <button class="big-btn" onclick="openSearchUI()">📱 スマホを忘れた方はこちら</button>
     </div>
   </div>
-
   <div id="camera-gate">
     <div class="gate-card">
       <h3>カメラを起動します</h3>
@@ -305,7 +295,6 @@
       <button id="camera-gate-btn" type="button">📷 カメラを起動する</button>
     </div>
   </div>
-
   <div id="search-ui">
     <div class="search-card">
       <h2>患者さんを検索</h2>
@@ -324,7 +313,6 @@
       </div>
     </div>
   </div>
-
   <div id="personal-confirm-ui">
     <div class="personal-card">
       <h2 id="personal-name"></h2>
@@ -336,7 +324,6 @@
       </div>
     </div>
   </div>
-
   <div id="selection-ui">
     <h2>だれが きたかな？</h2>
     <div class="subtext">来た人だけタップしてね</div>
@@ -350,9 +337,7 @@
     <button id="finish-btn" class="submit-btn" onclick="finishSelection()">とうろくする！</button>
     <div class="cat-char"></div>
   </div>
-
   <div id="loading" class="loading-overlay">まほうを かけてるよ...</div>
-
   <div id="ocr-result-modal">
     <div class="ocr-card">
       <h2 id="ocr-result-title">結果</h2>
@@ -360,7 +345,6 @@
       <button id="ocr-result-btn">OK</button>
     </div>
   </div>
-
   <div id="medical-cert-ui" class="medical-cert-ui">
     <div class="medical-cert-header">医療証の撮影</div>
     <div id="medcert-step1" style="display:none; width:100%; display:flex; flex-direction:column; align-items:center;">
@@ -398,123 +382,52 @@
     </div>
     <button class="tool-btn" onclick="medCertCancel()" style="margin-top:14px;">閉じる</button>
   </div>
-
   <video id="qr-video" autoplay playsinline muted style="position:absolute; left:-9999px; top:-9999px; width:1px; height:1px;"></video>
-
   <script>
-    // =========================================================
-    // GAS関数呼び出し（google.script.run方式）
-    // =========================================================
+    // GAS関数呼び出し（GitHub Pages用fetchベース）
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbz3LgHl80x5jiZrabVYNFSbRnwSE3O_gYJrtvEtBOezzk7uPUTNWgsfPMBOedO31ioDmA/exec";
+
     function callGAS(funcName, params) {
-      return new Promise((resolve, reject) => {
-        google.script.run
-          .withSuccessHandler(resolve)
-          .withFailureHandler(reject)
-          .dispatchFunction(funcName, params);
-      });
+      const payload = encodeURIComponent(JSON.stringify({ func: funcName, params: params }));
+      return fetch(GAS_URL + "?payload=" + payload, { method: "GET", mode: "cors", credentials: "omit" })
+        .then(r => r.json());
     }
-
-    // 画像をCanvas経由で圧縮する
-    function compressImageBase64(base64, maxWidth, quality) {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-          const cv = document.createElement("canvas");
-          let w = img.width, h = img.height;
-          if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
-          cv.width = w; cv.height = h;
-          const c = cv.getContext("2d");
-          c.drawImage(img, 0, 0, w, h);
-          resolve(cv.toDataURL("image/jpeg", quality));
-        };
-        img.onerror = reject;
-        img.src = base64;
-      });
-    }
-
-    // 医療証画像専用：no-cors POST → ポーリング方式
-    // GASはPOST後にリダイレクトするためレスポンスが読めない
-    // → no-corsでPOSTだけ送り、結果はGASにキャッシュさせてGETでポーリング取得
+    // 医療証画像専用：GAS bridgeページにpostMessageで送信
     async function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
       const compressed = await compressImageBase64(base64Data, 800, 0.6);
-      let imgData = compressed;
-      if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
 
-      // セッションIDを生成（結果取得のキー）
-      const sessionId = "s" + Date.now() + Math.random().toString(36).slice(2, 6);
-
-      const bodyStr = JSON.stringify({
-        func: "saveMedicalCertPhoto",
-        params: [String(patientNum), String(patientName), imgData],
-        sessionId: sessionId
-      });
-
-      // no-corsでPOST（リダイレクトをブロックしない・レスポンスは読めない）
-      await fetch(GAS_URL, {
-        method: "POST",
-        mode: "no-cors",
-        body: bodyStr
-      });
-
-      // GASが処理完了するまでポーリング（最大60秒）
-      const pollUrl = GAS_URL + "?payload=" + encodeURIComponent(JSON.stringify({
-        func: "getSessionResult",
-        params: [sessionId]
-      }));
-
-      for (let i = 0; i < 30; i++) {
-        await new Promise(r => setTimeout(r, 2000));
-        try {
-          const pollRes = await fetch(pollUrl, { method: "GET", mode: "cors", credentials: "omit" });
-          if (!pollRes.ok) continue;
-          const data = await pollRes.json();
-          if (data && data.status === "done") {
-            if (data.result && data.result.needsRetry === true) {
-              throw new Error("再撮影が必要です: " + (data.result.message || "画像が不鮮明です"));
-            }
-            return data.result;
-          }
-        } catch(e) {
-          if (e.message && e.message.indexOf("再撮影") !== -1) throw e;
-          // まだ処理中の場合は続ける
-        }
+      const gasFrame = document.getElementById("gas-bridge-frame");
+      if (!gasFrame || !gasFrame.contentWindow) {
+        throw new Error("GAS連携フレームが準備できていません。しばらく待ってから再試行してください。");
       }
-      throw new Error("タイムアウト：GASの処理が完了しませんでした");
-    }
-        const testUrl = GAS_URL + "?payload=" + encodeURIComponent(testPayload);
-        try {
-          const testRes = await fetch(testUrl, { method: "GET", mode: "cors", credentials: "omit" });
-          if (testRes.ok) {
-            maxOk = sz;
+
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          window.removeEventListener("message", handler);
+          reject(new Error("タイムアウト（60秒）：GASの応答がありませんでした"));
+        }, 60000);
+
+        function handler(event) {
+          const msg = event.data;
+          if (!msg || msg.type !== "medcertResult") return;
+          clearTimeout(timer);
+          window.removeEventListener("message", handler);
+          if (msg.result && msg.result.needsRetry === true) {
+            reject(new Error("再撮影が必要です: " + (msg.result.message || "画像が不鮮明です")));
           } else {
-            break;
+            resolve(msg.result);
           }
-        } catch(e) {
-          break;
         }
-      }
-      alert("SafariでOKだったチャンクの最大文字数: " + maxOk);
-      throw new Error("テスト完了: 最大=" + maxOk + "文字");
+        window.addEventListener("message", handler);
 
-      // 全チャンク送信完了後、結合して保存を指示
-      const finalPayload = JSON.stringify({
-        func: "saveMedicalCertFinalize",
-        params: [sessionId, String(patientNum), String(patientName)]
+        gasFrame.contentWindow.postMessage({
+          type: "saveMedicalCert",
+          patientNum: String(patientNum),
+          patientName: String(patientName),
+          imageData: compressed
+        }, "*");
       });
-      const finalUrl = GAS_URL + "?payload=" + encodeURIComponent(finalPayload);
-      const finalRes = await fetch(finalUrl, { method: "GET", mode: "cors", credentials: "omit" });
-      if (!finalRes.ok) throw new Error("保存失敗: HTTP " + finalRes.status);
-      const result = await finalRes.json();
-
-      if (result && result.needsRetry === true) {
-        throw new Error("再撮影が必要です: " + (result.message || "画像が不鮮明です"));
-      }
-      return result;
     }
-
-    // =========================================================
-    // グローバル変数
-    // =========================================================
     const qrVideoEl    = document.getElementById("qr-video");
     const canvas       = document.getElementById("canvas");
     const ctx          = canvas.getContext("2d", { willReadFrequently: true });
@@ -523,7 +436,6 @@
     const statusMsg    = document.getElementById("status-msg");
     const cameraGate   = document.getElementById("camera-gate");
     const cameraGateBtn = document.getElementById("camera-gate-btn");
-
     let isScanning      = true;
     let selectedMembers = [];
     let lastPayload     = "";
@@ -541,533 +453,156 @@
     let lastFrameAt = 0;
     let frameWatchTimer = null;
     let todayCheckedInNums = [];
-
-    // =========================================================
-    // 起動時：本日の受付済み番号
-    // =========================================================
     (async function loadTodayNums() {
       try {
         const res = await callGAS("getTodayCheckedInNums", []);
         loading.style.display = "none";
-        if (res && res.nums) {
-          todayCheckedInNums = res.nums.map(String);
-        }
-      } catch(e) {
-        loading.style.display = "none";
-        console.warn("本日済み番号の取得失敗:", e);
-      }
+        if (res && res.nums) { todayCheckedInNums = res.nums.map(String); }
+      } catch(e) { loading.style.display = "none"; console.warn("本日済み番号の取得失敗:", e); }
     })();
-
-    // =========================================================
-    // ウォッチドッグ
-    // =========================================================
-    function startUiWatchdog(ms) {
-      stopUiWatchdog();
-      uiWatchdog = setTimeout(() => hardResetToScan("通信が不安定です。もう一度かざしてね"), ms || 4500);
-    }
-    function stopUiWatchdog() {
-      if (uiWatchdog) { clearTimeout(uiWatchdog); uiWatchdog = null; }
-    }
-
-    function setStatus(msg, autoBack = true) {
-      statusMsg.textContent = msg;
-      if (autoBack) setTimeout(() => { statusMsg.textContent = "診察券（QR）をみせてね🐾"; }, 5000);
-    }
-
-    // =========================================================
-    // QRカメラ
-    // =========================================================
+    function startUiWatchdog(ms) { stopUiWatchdog(); uiWatchdog = setTimeout(() => hardResetToScan("通信が不安定です。もう一度かざしてね"), ms || 4500); }
+    function stopUiWatchdog() { if (uiWatchdog) { clearTimeout(uiWatchdog); uiWatchdog = null; } }
+    function setStatus(msg, autoBack = true) { statusMsg.textContent = msg; if (autoBack) setTimeout(() => { statusMsg.textContent = "診察券（QR）をみせてね🐾"; }, 5000); }
     async function startQrCamera(reason) {
-      if (qrStarting) return;
-      qrStarting = true;
-      console.log("📷 startQrCamera:", reason);
+      if (qrStarting) return; qrStarting = true;
       try {
-        if (qrStream && qrStream.active && qrStream.getTracks().some(t => t.readyState === "live")) {
-          isScanning = true; beginFrameWatch(); qrStarting = false; return;
-        }
-        stopMedCertCamera();
-        stopQrCamera(false);
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: false,
-          video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }
-        });
-        qrStream = stream;
-        qrVideoEl.srcObject = stream;
-        qrVideoEl.setAttribute("playsinline", "true");
-        qrVideoEl.muted = true;
-        await qrVideoEl.play();
-        isScanning = true;
-        beginFrameWatch();
-        requestAnimationFrame(tick);
-        cameraGate.style.display = "none";
-        console.log("✅ QRカメラ起動成功");
-      } catch(err) {
-        console.warn("❌ QRカメラ起動失敗:", err && err.name, err && err.message);
-        showCameraGate();
-      } finally {
-        qrStarting = false;
-      }
+        if (qrStream && qrStream.active && qrStream.getTracks().some(t => t.readyState === "live")) { isScanning = true; beginFrameWatch(); qrStarting = false; return; }
+        stopMedCertCamera(); stopQrCamera(false);
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } } });
+        qrStream = stream; qrVideoEl.srcObject = stream; qrVideoEl.setAttribute("playsinline", "true"); qrVideoEl.muted = true;
+        await qrVideoEl.play(); isScanning = true; beginFrameWatch(); requestAnimationFrame(tick); cameraGate.style.display = "none";
+      } catch(err) { showCameraGate(); } finally { qrStarting = false; }
     }
-
     function stopQrCamera(stopWatch = true) {
       if (stopWatch) stopFrameWatch();
       try { if (qrStream) qrStream.getTracks().forEach(t => { try { t.stop(); } catch(e){} }); } catch(e) {}
-      qrStream = null;
-      try { qrVideoEl.pause(); } catch(e) {}
-      try { qrVideoEl.srcObject = null; } catch(e) {}
+      qrStream = null; try { qrVideoEl.pause(); } catch(e) {} try { qrVideoEl.srcObject = null; } catch(e) {}
     }
-
-    function showCameraGate() {
-      if (document.getElementById("medical-cert-ui").style.display === "flex") return;
-      cameraGate.style.display = "flex";
-    }
-
-    cameraGateBtn.addEventListener("touchend", function(e) {
-      e.preventDefault(); e.stopPropagation();
-      cameraGate.style.display = "none";
-      qrStarting = false;
-      startQrCamera("gate-touchend");
-    }, { passive: false });
-
-    cameraGateBtn.addEventListener("click", function(e) {
-      if (cameraGate.style.display === "none") return;
-      e.preventDefault();
-      cameraGate.style.display = "none";
-      qrStarting = false;
-      startQrCamera("gate-click");
-    });
-
-    function beginFrameWatch() {
-      stopFrameWatch();
-      lastFrameAt = Date.now();
-      frameWatchTimer = setInterval(() => {
-        if (!isScanning) return;
-        if (Date.now() - lastFrameAt > 3000) {
-          setStatus("カメラを再起動してください", false);
-          stopQrCamera();
-          showCameraGate();
-        }
-      }, 1000);
-    }
-    function stopFrameWatch() {
-      if (frameWatchTimer) { clearInterval(frameWatchTimer); frameWatchTimer = null; }
-    }
-
-    // =========================================================
-    // QRスキャンループ
-    // =========================================================
+    function showCameraGate() { if (document.getElementById("medical-cert-ui").style.display === "flex") return; cameraGate.style.display = "flex"; }
+    cameraGateBtn.addEventListener("touchend", function(e) { e.preventDefault(); e.stopPropagation(); cameraGate.style.display = "none"; qrStarting = false; startQrCamera("gate-touchend"); }, { passive: false });
+    cameraGateBtn.addEventListener("click", function(e) { if (cameraGate.style.display === "none") return; e.preventDefault(); cameraGate.style.display = "none"; qrStarting = false; startQrCamera("gate-click"); });
+    function beginFrameWatch() { stopFrameWatch(); lastFrameAt = Date.now(); frameWatchTimer = setInterval(() => { if (!isScanning) return; if (Date.now() - lastFrameAt > 3000) { setStatus("カメラを再起動してください", false); stopQrCamera(); showCameraGate(); } }, 1000); }
+    function stopFrameWatch() { if (frameWatchTimer) { clearInterval(frameWatchTimer); frameWatchTimer = null; } }
     function tick() {
       try {
         if (!isScanning) { requestAnimationFrame(tick); return; }
         if (qrVideoEl.readyState === qrVideoEl.HAVE_ENOUGH_DATA) {
           const vw = qrVideoEl.videoWidth, vh = qrVideoEl.videoHeight;
           if (vw > 0 && vh > 0) {
-            canvas.width = vw; canvas.height = vh;
-            ctx.drawImage(qrVideoEl, 0, 0, vw, vh);
-            lastFrameAt = Date.now();
+            canvas.width = vw; canvas.height = vh; ctx.drawImage(qrVideoEl, 0, 0, vw, vh); lastFrameAt = Date.now();
             const imageData = ctx.getImageData(0, 0, vw, vh);
             const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
             if (code && code.data && code.data.trim()) {
-              const payload = code.data.trim();
-              const now = Date.now();
+              const payload = code.data.trim(); const now = Date.now();
               if (now - lastScanAt < SCAN_COOLDOWN_MS) { requestAnimationFrame(tick); return; }
               lastScanAt = now;
               if (payload === lastPayload) { requestAnimationFrame(tick); return; }
-              lastPayload = payload;
-              isScanning = false;
-              showFamilySelection(payload);
+              lastPayload = payload; isScanning = false; showFamilySelection(payload);
             }
           }
         }
       } catch(e) { console.warn("tick error", e); }
       requestAnimationFrame(tick);
     }
-
-    // =========================================================
-    // QR読取後
-    // =========================================================
     async function showFamilySelection(payload) {
-      busy = false; selectedMembers = []; patientsWithAge = []; under18Patients = [];
-      finishBtn.disabled = true;
-      loading.textContent = "まほうを かけてるよ...";
-      loading.style.display = "flex";
-      startUiWatchdog(8000);
+      busy = false; selectedMembers = []; patientsWithAge = []; under18Patients = []; finishBtn.disabled = true;
+      loading.textContent = "まほうを かけてるよ..."; loading.style.display = "flex"; startUiWatchdog(8000);
       try {
         const list = await callGAS("getFamilyListByQr", [payload]);
-        stopUiWatchdog();
-        loading.style.display = "none";
+        stopUiWatchdog(); loading.style.display = "none";
         if (!list || list.length === 0) { hardResetToScan("データがみつかりません。もう一度かざしてね"); return; }
         const isPersonalQR = payload.indexOf("TDL|P|") === 0;
-        if (isPersonalQR && list.length === 1) {
-          if (todayCheckedInNums.includes(String(list[0].num))) { hardResetToScan(list[0].name + " 様は本日済みです"); return; }
-          showPersonalConfirm(list[0]); return;
-        }
-        const container = document.getElementById("name-container");
-        container.innerHTML = "";
+        if (isPersonalQR && list.length === 1) { if (todayCheckedInNums.includes(String(list[0].num))) { hardResetToScan(list[0].name + " 様は本日済みです"); return; } showPersonalConfirm(list[0]); return; }
+        const container = document.getElementById("name-container"); container.innerHTML = "";
         list.forEach(m => {
-          const btn = document.createElement("button");
-          btn.className = "name-btn";
-          const isDone = todayCheckedInNums.includes(String(m.num));
-          const left = document.createElement("div"); left.className = "n";
-          left.textContent = m.name + (isDone ? "　済み" : "");
-          const right = document.createElement("div"); right.className = "no";
-          right.textContent = "No." + m.num;
-          btn.appendChild(left); btn.appendChild(right);
-          if (isDone) { btn.style.opacity = "0.4"; btn.style.pointerEvents = "none"; }
-          else btn.onclick = () => toggleMember(btn, m);
-          container.appendChild(btn);
-        });
-        if (list.every(m => todayCheckedInNums.includes(String(m.num)))) { hardResetToScan("全員が本日済みです"); return; }
-        document.getElementById("selection-ui").style.display = "flex";
-      } catch(e) {
-        stopUiWatchdog(); loading.style.display = "none";
-        hardResetToScan("通信エラー。もう一度かざしてね");
-      }
-    }
-
-    function showPersonalConfirm(patient) {
-      document.getElementById("personal-name").textContent   = patient.name + " 様";
-      document.getElementById("personal-number").textContent = "No. " + patient.num;
-      selectedMembers = [patient];
-      document.getElementById("personal-confirm-ui").style.display = "flex";
-    }
-    function confirmPersonalYes() {
-      document.getElementById("personal-confirm-ui").style.display = "none";
-      if (todayCheckedInNums.includes(String(selectedMembers[0].num))) { hardResetToScan(selectedMembers[0].name + " 様は本日済みです"); return; }
-      checkAgeBeforeRegister();
-    }
-    function confirmPersonalNo() {
-      document.getElementById("personal-confirm-ui").style.display = "none";
-      hardResetToScan();
-    }
-
-    function toggleMember(btn, m) {
-      if (busy) return;
-      btn.classList.toggle("selected");
-      const i = selectedMembers.findIndex(x => String(x.num) === String(m.num));
-      if (i > -1) selectedMembers.splice(i, 1); else selectedMembers.push({ num: String(m.num), name: String(m.name) });
-      finishBtn.disabled = (selectedMembers.length === 0);
-    }
-    function selectAll() {
-      if (busy) return;
-      selectedMembers = [];
-      document.getElementById("name-container").querySelectorAll(".name-btn").forEach(btn => {
-        if (!btn.classList.contains("selected")) btn.classList.add("selected");
-        const no = btn.querySelector(".no")?.textContent?.replace("No.", "").trim();
-        const n  = btn.querySelector(".n")?.textContent?.replace("　済み", "").trim();
-        if (no && n) selectedMembers.push({ num: String(no), name: String(n) });
-      });
-      finishBtn.disabled = (selectedMembers.length === 0);
-    }
-    function clearAll() {
-      if (busy) return;
-      document.getElementById("name-container").querySelectorAll(".name-btn").forEach(btn => btn.classList.remove("selected"));
-      selectedMembers = []; finishBtn.disabled = true;
-    }
-    function cancelAndBack() { if (!busy) hardResetToScan(); }
-
-    // =========================================================
-    // 年齢チェック
-    // =========================================================
-    async function checkAgeBeforeRegister() {
-      if (selectedMembers.length === 0) { alert("来た人を選んでね！"); return; }
-      loading.textContent = "年齢を確認中..."; loading.style.display = "flex";
-      try {
-        const results = await callGAS("checkPatientsAge", [selectedMembers.map(m => String(m.num))]);
-        loading.style.display = "none";
-        patientsWithAge = results || [];
-        under18Patients = (results || []).filter(p => p && p.isUnder18);
-        if (under18Patients.length > 0) showMedicalCertForUnder18(); else doRegister();
-      } catch(e) {
-        loading.style.display = "none"; doRegister();
-      }
-    }
-
-    function showMedicalCertForUnder18() {
-      if (under18Patients.length === 0) { doRegister(); return; }
-      const patient = under18Patients[0];
-      medCertSelectedPatient = { num: String(patient.num || ""), name: String(patient.name || "") };
-      showMedCertStep2();
-    }
-
-    // =========================================================
-    // 登録
-    // =========================================================
-    async function doRegister() {
-      if (selectedMembers.length === 0) { hardResetToScan(); return; }
-      document.getElementById("selection-ui").style.display = "none";
-      document.getElementById("personal-confirm-ui").style.display = "none";
-      document.getElementById("medical-cert-ui").style.display = "none";
-      document.getElementById("ocr-result-modal").style.display = "none";
-      loading.textContent = "まほうを かけてるよ..."; loading.style.display = "flex";
-      startUiWatchdog(8000);
-      try {
-        const res = await callGAS("registerSelectedPatients", [selectedMembers]);
-        stopUiWatchdog(); loading.style.display = "none";
-        if (res && res.success) {
-          selectedMembers.forEach(m => { const n = String(m.num); if (!todayCheckedInNums.includes(n)) todayCheckedInNums.push(n); });
-          hardResetToScan("とうろく できたよ！");
-        } else { hardResetToScan("すでに受付済みです"); }
-      } catch(e) {
-        stopUiWatchdog(); loading.style.display = "none";
-        hardResetToScan("通信エラー。もう一度かざしてね");
-      }
-    }
-
-    function finishSelection() {
-      if (busy) return;
-      if (selectedMembers.length === 0) { alert("来た人を選んでね！"); return; }
-      const alreadyDone = selectedMembers.filter(m => todayCheckedInNums.includes(String(m.num)));
-      if (alreadyDone.length === selectedMembers.length) { hardResetToScan("全員が本日済みです"); return; }
-      if (alreadyDone.length > 0) {
-        alert(alreadyDone.map(m => m.name).join("・") + " 様は本日済みです。残りの方で続けます。");
-        selectedMembers = selectedMembers.filter(m => !todayCheckedInNums.includes(String(m.num)));
-      }
-      busy = true; finishBtn.disabled = true;
-      checkAgeBeforeRegister();
-    }
-
-    function hardResetToScan(msg) {
-      try {
-        stopUiWatchdog(); busy = false; selectedMembers = []; patientsWithAge = []; under18Patients = [];
-        medCertSelectedPatient = null; medCertCapturedImage = null; finishBtn.disabled = true;
-        document.getElementById("selection-ui").style.display = "none";
-        document.getElementById("personal-confirm-ui").style.display = "none";
-        document.getElementById("medical-cert-ui").style.display = "none";
-        document.getElementById("ocr-result-modal").style.display = "none";
-        document.getElementById("search-ui").style.display = "none";
-        loading.style.display = "none";
-        stopMedCertCamera();
-        try { ctx.clearRect(0, 0, canvas.width, canvas.height); } catch(e) {}
-        if (msg) setStatus(msg);
-        lastPayload = ""; lastScanAt = 0; isScanning = true;
-        startQrCamera("hardResetToScan");
-      } catch(e) { location.reload(); }
-    }
-
-    // =========================================================
-    // 医療証UI
-    // =========================================================
-    function openMedicalCertUI() {
-      if (selectedMembers.length === 0) { alert("先に来院者を選択してください"); return; }
-      if (selectedMembers.length > 1) { showMedCertPatientSelection(); }
-      else {
-        medCertSelectedPatient = { num: String(selectedMembers[0].num), name: String(selectedMembers[0].name) };
-        showMedCertStep2();
-      }
-    }
-    function showMedCertPatientSelection() {
-      const list = document.getElementById("medcert-patient-list");
-      list.innerHTML = "";
-      selectedMembers.forEach(m => {
-        const card = document.createElement("div");
-        card.className = "patient-card"; card.style.cursor = "pointer";
-        card.innerHTML = `<h3>${escapeHtml(m.name)} 様</h3><div class="num">No.${escapeHtml(m.num)}</div>`;
-        card.onclick = () => { medCertSelectedPatient = { num: String(m.num), name: String(m.name) }; showMedCertStep2(); };
-        list.appendChild(card);
-      });
-      document.getElementById("medcert-step1").style.display = "flex";
-      document.getElementById("medcert-step2").style.display = "none";
-      document.getElementById("medcert-step3").style.display = "none";
-      document.getElementById("medcert-step4").style.display = "none";
-      document.getElementById("medical-cert-ui").style.display = "flex";
-    }
-    function showMedCertStep2() {
-      const card = document.getElementById("medcert-selected-patient");
-      card.innerHTML = `<h3>${escapeHtml(medCertSelectedPatient.name)} 様</h3><div class="num">No.${escapeHtml(medCertSelectedPatient.num)}</div>`;
-      document.getElementById("medcert-step1").style.display = "none";
-      document.getElementById("medcert-step2").style.display = "flex";
-      document.getElementById("medcert-step3").style.display = "none";
-      document.getElementById("medcert-step4").style.display = "none";
-      document.getElementById("medical-cert-ui").style.display = "flex";
-    }
-    function medCertAnswerYes() { showMedCertStep3(); }
-    function medCertAnswerNo() {
-      if (under18Patients.length > 0) {
-        under18Patients.shift();
-        if (under18Patients.length > 0) showMedicalCertForUnder18();
-        else { document.getElementById("medical-cert-ui").style.display = "none"; stopMedCertCamera(); doRegister(); }
-      } else {
-        document.getElementById("medical-cert-ui").style.display = "none";
-        stopMedCertCamera();
-        document.getElementById("selection-ui").style.display = "flex";
-      }
-    }
-    async function showMedCertStep3() {
-      const card = document.getElementById("medcert-selected-patient2");
-      card.innerHTML = `<h3>${escapeHtml(medCertSelectedPatient.name)} 様</h3><div class="num">No.${escapeHtml(medCertSelectedPatient.num)}</div>`;
-      document.getElementById("medcert-step1").style.display = "none";
-      document.getElementById("medcert-step2").style.display = "none";
-      document.getElementById("medcert-step3").style.display = "flex";
-      document.getElementById("medcert-step4").style.display = "none";
-      document.getElementById("medical-cert-ui").style.display = "flex";
-      stopQrCamera();
-      await startMedCertCamera();
-    }
-    async function startMedCertCamera() {
-      const v = document.getElementById("medcert-video");
-      try {
-        stopMedCertCamera();
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: false, video: { facingMode: { ideal: "user" }, width: { ideal: 1920 }, height: { ideal: 1080 } }
-        });
-        medCertStream = stream; v.srcObject = stream;
-        v.setAttribute("playsinline", "true"); v.muted = true;
-        await v.play();
-      } catch(err) {
-        alert("カメラが起動できません: " + (err && err.message ? err.message : ""));
-        stopMedCertCamera(); startQrCamera("medcert-start-failed"); medCertCancel();
-      }
-    }
-    function stopMedCertCamera() {
-      try { const v = document.getElementById("medcert-video"); if (v) { try { v.pause(); } catch(e){} try { v.srcObject = null; } catch(e){} } } catch(e) {}
-      if (medCertStream) { medCertStream.getTracks().forEach(t => { try { t.stop(); } catch(e){} }); medCertStream = null; }
-    }
-    function medCertCapture() {
-      const v = document.getElementById("medcert-video");
-      const c = document.getElementById("medcert-canvas");
-      const cctx = c.getContext("2d");
-      c.width = v.videoWidth || 1280; c.height = v.videoHeight || 720;
-      cctx.drawImage(v, 0, 0);
-      medCertCapturedImage = c.toDataURL("image/jpeg", 0.9);
-      stopMedCertCamera(); showMedCertStep4();
-    }
-    function showMedCertStep4() {
-      const card = document.getElementById("medcert-selected-patient3");
-      card.innerHTML = `<h3>${escapeHtml(medCertSelectedPatient.name)} 様</h3><div class="num">No.${escapeHtml(medCertSelectedPatient.num)}</div>`;
-      document.getElementById("medcert-preview").src = medCertCapturedImage;
-      document.getElementById("medcert-step1").style.display = "none";
-      document.getElementById("medcert-step2").style.display = "none";
-      document.getElementById("medcert-step3").style.display = "none";
-      document.getElementById("medcert-step4").style.display = "flex";
-    }
-    function medCertRetake() { showMedCertStep3(); }
-    async function medCertUpload() {
-      if (!medCertCapturedImage || !medCertSelectedPatient) { alert("エラーが発生しました"); return; }
-      loading.textContent = "AIで解析中..."; loading.style.display = "flex";
-      try {
-        const result = await callGAS_saveMedicalCert(String(medCertSelectedPatient.num), String(medCertSelectedPatient.name), medCertCapturedImage);
-        loading.style.display = "none";
-        document.getElementById("medical-cert-ui").style.display = "none";
-        stopMedCertCamera(); showOcrResultModal(result);
-      } catch(e) {
-        loading.style.display = "none"; alert("保存エラー: " + e);
-        startQrCamera("medcert-upload-failed");
-      }
-    }
-    function medCertCancel() {
-      stopMedCertCamera(); medCertSelectedPatient = null; medCertCapturedImage = null;
-      document.getElementById("medical-cert-ui").style.display = "none";
-      if (under18Patients.length === 0) document.getElementById("selection-ui").style.display = "flex";
-      startQrCamera("medCertCancel"); isScanning = true;
-    }
-
-    function showOcrResultModal(result) {
-      const modal = document.getElementById("ocr-result-modal");
-      const title = document.getElementById("ocr-result-title");
-      const content = document.getElementById("ocr-result-content");
-      const btn = document.getElementById("ocr-result-btn");
-      const closeAndNext = () => {
-        modal.style.display = "none";
-        if (under18Patients.length > 0) {
-          under18Patients.shift();
-          if (under18Patients.length > 0) showMedicalCertForUnder18(); else doRegister();
-        } else { document.getElementById("selection-ui").style.display = "flex"; startQrCamera("after-ocr"); isScanning = true; }
-      };
-
-      if (!result) {
-        title.textContent = "❌ エラー";
-        title.style.color = "#e53935";
-        content.innerHTML = "データの取得に失敗しました";
-        btn.textContent = "閉じる"; btn.onclick = closeAndNext; modal.style.display = "block"; return;
-      }
-
-      if (result.success === true) {
-        title.textContent = "✅ 保存完了";
-        title.style.color = "#4FC3F7";
-
-        let html = '<div style="font-size:1.1em;font-weight:900;margin-bottom:14px;color:#4FC3F7;">📁 医療証を保存しました！</div>';
-
-        // AI解析結果セクション
-        const hasOcr = result.futanNumber || result.jukyushaNumber || result.validFrom || result.validTo;
-        if (hasOcr) {
-          html += '<div style="margin-top:10px;padding:12px;background:#E3F2FD;border-radius:10px;border-left:5px solid #4FC3F7;">';
-          html += '<div style="font-weight:900;margin-bottom:10px;color:#01579B;font-size:1.05em;">🤖 AI解析結果</div>';
-          if (result.futanNumber)    html += `<div style="margin:6px 0;">📋 負担番号：<strong style="color:#1565C0;font-size:1.1em;">${escapeHtml(result.futanNumber)}</strong></div>`;
-          if (result.jukyushaNumber) html += `<div style="margin:6px 0;">🪪 受給者番号：<strong style="color:#1565C0;font-size:1.1em;">${escapeHtml(result.jukyushaNumber)}</strong></div>`;
-          if (result.validFrom)      html += `<div style="margin:6px 0;">📅 有効開始：<strong style="color:#2E7D32;">${escapeHtml(result.validFrom)}</strong></div>`;
-          if (result.validTo)        html += `<div style="margin:6px 0;">📅 有効終了：<strong style="color:#C62828;">${escapeHtml(result.validTo)}</strong></div>`;
-          html += '</div>';
-        } else {
-          html += '<div style="margin-top:10px;padding:10px;background:#FFF9C4;border-radius:10px;color:#795548;font-size:0.95em;">';
-          html += '⚠️ AI解析結果が取得できませんでした。<br>番号は手動でご確認ください。';
-          html += '</div>';
-        }
-
-        content.innerHTML = html;
-        btn.textContent = "OK";
-        btn.onclick = closeAndNext;
-        modal.style.display = "block";
-        return;
-      }
-
-      // エラー
-      title.textContent = "❌ エラー";
-      title.style.color = "#e53935";
-      content.innerHTML = `<div style="color:#c62828;">${escapeHtml(result.message || "不明なエラー")}</div>`;
-      btn.textContent = "閉じる"; btn.onclick = closeAndNext; modal.style.display = "block";
-    }
-
-    // =========================================================
-    // 検索
-    // =========================================================
-    function openSearchUI() { document.getElementById("search-ui").style.display = "flex"; }
-    function closeSearchUI() { document.getElementById("search-ui").style.display = "none"; }
-
-    async function executeSearch() {
-      const birthday = document.getElementById("search-birthday").value.trim();
-      const kana = String(document.getElementById("search-kana").value || "").trim();
-      if (!birthday || !kana) { alert("生年月日とお名前（カタカナ）を両方入力してください"); return; }
-      loading.textContent = "検索中..."; loading.style.display = "flex";
-      try {
-        const results = await callGAS("searchPatientByBirthdayAndKana", [birthday, kana]);
-        loading.style.display = "none";
-        if (!results || results.length === 0) { alert("該当する患者さんが見つかりませんでした。"); return; }
-        closeSearchUI();
-        if (results.length === 1) { showPersonalConfirm(results[0]); return; }
-        const container = document.getElementById("name-container");
-        container.innerHTML = "";
-        results.forEach(m => {
           const btn = document.createElement("button"); btn.className = "name-btn";
           const isDone = todayCheckedInNums.includes(String(m.num));
           const left = document.createElement("div"); left.className = "n"; left.textContent = m.name + (isDone ? "　済み" : "");
           const right = document.createElement("div"); right.className = "no"; right.textContent = "No." + m.num;
           btn.appendChild(left); btn.appendChild(right);
-          if (isDone) { btn.style.opacity = "0.4"; btn.style.pointerEvents = "none"; }
-          else btn.onclick = () => toggleMember(btn, m);
+          if (isDone) { btn.style.opacity = "0.4"; btn.style.pointerEvents = "none"; } else btn.onclick = () => toggleMember(btn, m);
           container.appendChild(btn);
         });
-        if (results.every(m => todayCheckedInNums.includes(String(m.num)))) { alert("全員が本日受付済みです"); hardResetToScan(); return; }
+        if (list.every(m => todayCheckedInNums.includes(String(m.num)))) { hardResetToScan("全員が本日済みです"); return; }
         document.getElementById("selection-ui").style.display = "flex";
-      } catch(e) {
-        loading.style.display = "none"; alert("検索に失敗しました: " + e);
+      } catch(e) { stopUiWatchdog(); loading.style.display = "none"; hardResetToScan("通信エラー。もう一度かざしてね"); }
+    }
+    function showPersonalConfirm(patient) { document.getElementById("personal-name").textContent = patient.name + " 様"; document.getElementById("personal-number").textContent = "No. " + patient.num; selectedMembers = [patient]; document.getElementById("personal-confirm-ui").style.display = "flex"; }
+    function confirmPersonalYes() { document.getElementById("personal-confirm-ui").style.display = "none"; if (todayCheckedInNums.includes(String(selectedMembers[0].num))) { hardResetToScan(selectedMembers[0].name + " 様は本日済みです"); return; } checkAgeBeforeRegister(); }
+    function confirmPersonalNo() { document.getElementById("personal-confirm-ui").style.display = "none"; hardResetToScan(); }
+    function toggleMember(btn, m) { if (busy) return; btn.classList.toggle("selected"); const i = selectedMembers.findIndex(x => String(x.num) === String(m.num)); if (i > -1) selectedMembers.splice(i, 1); else selectedMembers.push({ num: String(m.num), name: String(m.name) }); finishBtn.disabled = (selectedMembers.length === 0); }
+    function selectAll() { if (busy) return; selectedMembers = []; document.getElementById("name-container").querySelectorAll(".name-btn").forEach(btn => { if (!btn.classList.contains("selected")) btn.classList.add("selected"); const no = btn.querySelector(".no")?.textContent?.replace("No.", "").trim(); const n = btn.querySelector(".n")?.textContent?.replace("　済み", "").trim(); if (no && n) selectedMembers.push({ num: String(no), name: String(n) }); }); finishBtn.disabled = (selectedMembers.length === 0); }
+    function clearAll() { if (busy) return; document.getElementById("name-container").querySelectorAll(".name-btn").forEach(btn => btn.classList.remove("selected")); selectedMembers = []; finishBtn.disabled = true; }
+    function cancelAndBack() { if (!busy) hardResetToScan(); }
+    async function checkAgeBeforeRegister() {
+      if (selectedMembers.length === 0) { alert("来た人を選んでね！"); return; }
+      loading.textContent = "年齢を確認中..."; loading.style.display = "flex";
+      try { const results = await callGAS("checkPatientsAge", [selectedMembers.map(m => String(m.num))]); loading.style.display = "none"; patientsWithAge = results || []; under18Patients = (results || []).filter(p => p && p.isUnder18); if (under18Patients.length > 0) showMedicalCertForUnder18(); else doRegister(); }
+      catch(e) { loading.style.display = "none"; doRegister(); }
+    }
+    function showMedicalCertForUnder18() { if (under18Patients.length === 0) { doRegister(); return; } const patient = under18Patients[0]; medCertSelectedPatient = { num: String(patient.num || ""), name: String(patient.name || "") }; showMedCertStep2(); }
+    async function doRegister() {
+      if (selectedMembers.length === 0) { hardResetToScan(); return; }
+      document.getElementById("selection-ui").style.display = "none"; document.getElementById("personal-confirm-ui").style.display = "none"; document.getElementById("medical-cert-ui").style.display = "none"; document.getElementById("ocr-result-modal").style.display = "none";
+      loading.textContent = "まほうを かけてるよ..."; loading.style.display = "flex"; startUiWatchdog(8000);
+      try { const res = await callGAS("registerSelectedPatients", [selectedMembers]); stopUiWatchdog(); loading.style.display = "none"; if (res && res.success) { selectedMembers.forEach(m => { const n = String(m.num); if (!todayCheckedInNums.includes(n)) todayCheckedInNums.push(n); }); hardResetToScan("とうろく できたよ！"); } else { hardResetToScan("すでに受付済みです"); } }
+      catch(e) { stopUiWatchdog(); loading.style.display = "none"; hardResetToScan("通信エラー。もう一度かざしてね"); }
+    }
+    function finishSelection() {
+      if (busy) return; if (selectedMembers.length === 0) { alert("来た人を選んでね！"); return; }
+      const alreadyDone = selectedMembers.filter(m => todayCheckedInNums.includes(String(m.num)));
+      if (alreadyDone.length === selectedMembers.length) { hardResetToScan("全員が本日済みです"); return; }
+      if (alreadyDone.length > 0) { alert(alreadyDone.map(m => m.name).join("・") + " 様は本日済みです。残りの方で続けます。"); selectedMembers = selectedMembers.filter(m => !todayCheckedInNums.includes(String(m.num))); }
+      busy = true; finishBtn.disabled = true; checkAgeBeforeRegister();
+    }
+    function hardResetToScan(msg) {
+      try { stopUiWatchdog(); busy = false; selectedMembers = []; patientsWithAge = []; under18Patients = []; medCertSelectedPatient = null; medCertCapturedImage = null; finishBtn.disabled = true; document.getElementById("selection-ui").style.display = "none"; document.getElementById("personal-confirm-ui").style.display = "none"; document.getElementById("medical-cert-ui").style.display = "none"; document.getElementById("ocr-result-modal").style.display = "none"; document.getElementById("search-ui").style.display = "none"; loading.style.display = "none"; stopMedCertCamera(); try { ctx.clearRect(0, 0, canvas.width, canvas.height); } catch(e) {} if (msg) setStatus(msg); lastPayload = ""; lastScanAt = 0; isScanning = true; startQrCamera("hardResetToScan"); } catch(e) { location.reload(); }
+    }
+    function openMedicalCertUI() { if (selectedMembers.length === 0) { alert("先に来院者を選択してください"); return; } if (selectedMembers.length > 1) { showMedCertPatientSelection(); } else { medCertSelectedPatient = { num: String(selectedMembers[0].num), name: String(selectedMembers[0].name) }; showMedCertStep2(); } }
+    function showMedCertPatientSelection() { const list = document.getElementById("medcert-patient-list"); list.innerHTML = ""; selectedMembers.forEach(m => { const card = document.createElement("div"); card.className = "patient-card"; card.style.cursor = "pointer"; card.innerHTML = `<h3>${escapeHtml(m.name)} 様</h3><div class="num">No.${escapeHtml(m.num)}</div>`; card.onclick = () => { medCertSelectedPatient = { num: String(m.num), name: String(m.name) }; showMedCertStep2(); }; list.appendChild(card); }); document.getElementById("medcert-step1").style.display = "flex"; document.getElementById("medcert-step2").style.display = "none"; document.getElementById("medcert-step3").style.display = "none"; document.getElementById("medcert-step4").style.display = "none"; document.getElementById("medical-cert-ui").style.display = "flex"; }
+    function showMedCertStep2() { const card = document.getElementById("medcert-selected-patient"); card.innerHTML = `<h3>${escapeHtml(medCertSelectedPatient.name)} 様</h3><div class="num">No.${escapeHtml(medCertSelectedPatient.num)}</div>`; document.getElementById("medcert-step1").style.display = "none"; document.getElementById("medcert-step2").style.display = "flex"; document.getElementById("medcert-step3").style.display = "none"; document.getElementById("medcert-step4").style.display = "none"; document.getElementById("medical-cert-ui").style.display = "flex"; }
+    function medCertAnswerYes() { showMedCertStep3(); }
+    function medCertAnswerNo() { if (under18Patients.length > 0) { under18Patients.shift(); if (under18Patients.length > 0) showMedicalCertForUnder18(); else { document.getElementById("medical-cert-ui").style.display = "none"; stopMedCertCamera(); doRegister(); } } else { document.getElementById("medical-cert-ui").style.display = "none"; stopMedCertCamera(); document.getElementById("selection-ui").style.display = "flex"; } }
+    async function showMedCertStep3() { const card = document.getElementById("medcert-selected-patient2"); card.innerHTML = `<h3>${escapeHtml(medCertSelectedPatient.name)} 様</h3><div class="num">No.${escapeHtml(medCertSelectedPatient.num)}</div>`; document.getElementById("medcert-step1").style.display = "none"; document.getElementById("medcert-step2").style.display = "none"; document.getElementById("medcert-step3").style.display = "flex"; document.getElementById("medcert-step4").style.display = "none"; document.getElementById("medical-cert-ui").style.display = "flex"; stopQrCamera(); await startMedCertCamera(); }
+    async function startMedCertCamera() { const v = document.getElementById("medcert-video"); try { stopMedCertCamera(); const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "user" }, width: { ideal: 1920 }, height: { ideal: 1080 } } }); medCertStream = stream; v.srcObject = stream; v.setAttribute("playsinline", "true"); v.muted = true; await v.play(); } catch(err) { alert("カメラが起動できません: " + (err && err.message ? err.message : "")); stopMedCertCamera(); startQrCamera("medcert-start-failed"); medCertCancel(); } }
+    function stopMedCertCamera() { try { const v = document.getElementById("medcert-video"); if (v) { try { v.pause(); } catch(e){} try { v.srcObject = null; } catch(e){} } } catch(e) {} if (medCertStream) { medCertStream.getTracks().forEach(t => { try { t.stop(); } catch(e){} }); medCertStream = null; } }
+    function medCertCapture() { const v = document.getElementById("medcert-video"); const c = document.getElementById("medcert-canvas"); const cctx = c.getContext("2d"); c.width = v.videoWidth || 1280; c.height = v.videoHeight || 720; cctx.drawImage(v, 0, 0); medCertCapturedImage = c.toDataURL("image/jpeg", 0.9); stopMedCertCamera(); showMedCertStep4(); }
+    function showMedCertStep4() { const card = document.getElementById("medcert-selected-patient3"); card.innerHTML = `<h3>${escapeHtml(medCertSelectedPatient.name)} 様</h3><div class="num">No.${escapeHtml(medCertSelectedPatient.num)}</div>`; document.getElementById("medcert-preview").src = medCertCapturedImage; document.getElementById("medcert-step1").style.display = "none"; document.getElementById("medcert-step2").style.display = "none"; document.getElementById("medcert-step3").style.display = "none"; document.getElementById("medcert-step4").style.display = "flex"; }
+    function medCertRetake() { showMedCertStep3(); }
+    async function medCertUpload() {
+      if (!medCertCapturedImage || !medCertSelectedPatient) { alert("エラーが発生しました"); return; }
+      loading.textContent = "AIで解析中..."; loading.style.display = "flex";
+      try { const result = await callGAS_saveMedicalCert(String(medCertSelectedPatient.num), String(medCertSelectedPatient.name), medCertCapturedImage); loading.style.display = "none"; document.getElementById("medical-cert-ui").style.display = "none"; stopMedCertCamera(); showOcrResultModal(result); }
+      catch(e) { loading.style.display = "none"; alert("保存エラー: " + e); startQrCamera("medcert-upload-failed"); }
+    }
+    function medCertCancel() { stopMedCertCamera(); medCertSelectedPatient = null; medCertCapturedImage = null; document.getElementById("medical-cert-ui").style.display = "none"; if (under18Patients.length === 0) document.getElementById("selection-ui").style.display = "flex"; startQrCamera("medCertCancel"); isScanning = true; }
+    function showOcrResultModal(result) {
+      const modal = document.getElementById("ocr-result-modal"); const title = document.getElementById("ocr-result-title"); const content = document.getElementById("ocr-result-content"); const btn = document.getElementById("ocr-result-btn");
+      const closeAndNext = () => { modal.style.display = "none"; if (under18Patients.length > 0) { under18Patients.shift(); if (under18Patients.length > 0) showMedicalCertForUnder18(); else doRegister(); } else { document.getElementById("selection-ui").style.display = "flex"; startQrCamera("after-ocr"); isScanning = true; } };
+      if (!result) { title.textContent = "❌ エラー"; title.style.color = "#e53935"; content.innerHTML = "データの取得に失敗しました"; btn.textContent = "閉じる"; btn.onclick = closeAndNext; modal.style.display = "block"; return; }
+      if (result.success === true) {
+        title.textContent = "✅ 保存完了"; title.style.color = "#4FC3F7";
+        let html = '<div style="font-size:1.1em;font-weight:900;margin-bottom:14px;color:#4FC3F7;">📁 医療証を保存しました！</div>';
+        const hasOcr = result.futanNumber || result.jukyushaNumber || result.validFrom || result.validTo;
+        if (hasOcr) { html += '<div style="margin-top:10px;padding:12px;background:#E3F2FD;border-radius:10px;border-left:5px solid #4FC3F7;">'; html += '<div style="font-weight:900;margin-bottom:10px;color:#01579B;font-size:1.05em;">🤖 AI解析結果</div>'; if (result.futanNumber) html += `<div style="margin:6px 0;">📋 負担番号：<strong style="color:#1565C0;font-size:1.1em;">${escapeHtml(result.futanNumber)}</strong></div>`; if (result.jukyushaNumber) html += `<div style="margin:6px 0;">🪪 受給者番号：<strong style="color:#1565C0;font-size:1.1em;">${escapeHtml(result.jukyushaNumber)}</strong></div>`; if (result.validFrom) html += `<div style="margin:6px 0;">📅 有効開始：<strong style="color:#2E7D32;">${escapeHtml(result.validFrom)}</strong></div>`; if (result.validTo) html += `<div style="margin:6px 0;">📅 有効終了：<strong style="color:#C62828;">${escapeHtml(result.validTo)}</strong></div>`; html += '</div>'; }
+        else { html += '<div style="margin-top:10px;padding:10px;background:#FFF9C4;border-radius:10px;color:#795548;font-size:0.95em;">⚠️ AI解析結果が取得できませんでした。<br>番号は手動でご確認ください。</div>'; }
+        content.innerHTML = html; btn.textContent = "OK"; btn.onclick = closeAndNext; modal.style.display = "block"; return;
       }
+      title.textContent = "❌ エラー"; title.style.color = "#e53935"; content.innerHTML = `<div style="color:#c62828;">${escapeHtml(result.message || "不明なエラー")}</div>`; btn.textContent = "閉じる"; btn.onclick = closeAndNext; modal.style.display = "block";
     }
-
-    function escapeHtml(s) {
-      return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    function openSearchUI() { document.getElementById("search-ui").style.display = "flex"; }
+    function closeSearchUI() { document.getElementById("search-ui").style.display = "none"; }
+    async function executeSearch() {
+      const birthday = document.getElementById("search-birthday").value.trim(); const kana = String(document.getElementById("search-kana").value || "").trim();
+      if (!birthday || !kana) { alert("生年月日とお名前（カタカナ）を両方入力してください"); return; }
+      loading.textContent = "検索中..."; loading.style.display = "flex";
+      try { const results = await callGAS("searchPatientByBirthdayAndKana", [birthday, kana]); loading.style.display = "none"; if (!results || results.length === 0) { alert("該当する患者さんが見つかりませんでした。"); return; } closeSearchUI(); if (results.length === 1) { showPersonalConfirm(results[0]); return; } const container = document.getElementById("name-container"); container.innerHTML = ""; results.forEach(m => { const btn = document.createElement("button"); btn.className = "name-btn"; const isDone = todayCheckedInNums.includes(String(m.num)); const left = document.createElement("div"); left.className = "n"; left.textContent = m.name + (isDone ? "　済み" : ""); const right = document.createElement("div"); right.className = "no"; right.textContent = "No." + m.num; btn.appendChild(left); btn.appendChild(right); if (isDone) { btn.style.opacity = "0.4"; btn.style.pointerEvents = "none"; } else btn.onclick = () => toggleMember(btn, m); container.appendChild(btn); }); if (results.every(m => todayCheckedInNums.includes(String(m.num)))) { alert("全員が本日受付済みです"); hardResetToScan(); return; } document.getElementById("selection-ui").style.display = "flex"; }
+      catch(e) { loading.style.display = "none"; alert("検索に失敗しました: " + e); }
     }
-
-    // =========================================================
-    // ページ復帰対策
-    // =========================================================
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") { qrStarting = false; startQrCamera("visibilitychange"); }
-    });
+    function escapeHtml(s) { return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { qrStarting = false; startQrCamera("visibilitychange"); } });
     window.addEventListener("pageshow", ev => { qrStarting = false; startQrCamera("pageshow"); });
     window.addEventListener("pagehide", () => { stopMedCertCamera(); stopQrCamera(); });
-
-    // 初回起動
     (async function boot() { await startQrCamera("boot"); })();
   </script>
 </body>
