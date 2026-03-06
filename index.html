@@ -436,84 +436,50 @@
 
     // 医療証画像専用：3段階方式
     // 医療証画像専用：POSTでGASに送信（HtmlOutput経由でCORS回避）
-    // 医療証画像専用：iframe form POST方式（本番版）
-    function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
-      return new Promise(async (resolve, reject) => {
-        try {
-          const compressed = await compressImageBase64(base64Data, 800, 0.6);
-          let imgData = compressed;
-          if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
+    // 医療証画像専用：チャンク分割GET方式
+    // 画像を小さく分割してGETで送り、GAS側で結合して保存する
+    async function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
+      const compressed = await compressImageBase64(base64Data, 800, 0.6);
+      let imgData = compressed;
+      if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
 
-          const iframeId = "medcert_iframe_" + Date.now();
+      const CHUNK_SIZE = 8000; // 1チャンクあたりの文字数
+      const sessionId = "sess_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
+      const totalChunks = Math.ceil(imgData.length / CHUNK_SIZE);
 
-          // タイムアウト60秒
-          const timer = setTimeout(() => {
-            cleanup();
-            reject(new Error("タイムアウト（60秒）"));
-          }, 60000);
+      // ローディングメッセージ更新
+      const loadingEl = document.getElementById("loading");
 
-          function cleanup() {
-            clearTimeout(timer);
-            const ifr = document.getElementById(iframeId);
-            if (ifr) ifr.remove();
-            const frm = document.getElementById(iframeId + "_form");
-            if (frm) frm.remove();
-          }
+      // チャンクを順番に送信
+      for (let i = 0; i < totalChunks; i++) {
+        if (loadingEl) loadingEl.textContent = "送信中... " + (i+1) + "/" + totalChunks;
+        const chunk = imgData.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+        const payload = JSON.stringify({
+          func: "saveMedicalCertChunk",
+          params: [sessionId, i, totalChunks, chunk, String(patientNum), String(patientName)]
+        });
+        const url = GAS_URL + "?payload=" + encodeURIComponent(payload);
+        const res = await fetch(url, { method: "GET", mode: "cors", credentials: "omit" });
+        if (!res.ok) throw new Error("チャンク送信失敗: HTTP " + res.status);
+        const data = await res.json();
+        if (data.error) throw new Error("チャンクエラー: " + data.error);
+      }
+      if (loadingEl) loadingEl.textContent = "AIで解析中...";
 
-          // 非表示iframe作成
-          const iframe = document.createElement("iframe");
-          iframe.id   = iframeId;
-          iframe.name = iframeId;
-          iframe.style.display = "none";
-          document.body.appendChild(iframe);
-
-          // iframeのonloadでGASのレスポンスを取得
-          let loadCount = 0;
-          iframe.onload = function() {
-            loadCount++;
-            if (loadCount < 2) return;
-            try {
-              const ifrDoc = iframe.contentDocument || iframe.contentWindow.document;
-              const text = ifrDoc.body ? ifrDoc.body.innerText || ifrDoc.body.textContent : "";
-              cleanup();
-              if (!text) { reject(new Error("GASから応答がありません")); return; }
-              const clean = text.replace(/<[^>]*>/g, "").trim();
-              const result = JSON.parse(clean);
-              if (result && result.needsRetry === true) {
-                reject(new Error("再撮影が必要です: " + (result.message || "画像が不鮮明です")));
-              } else {
-                resolve(result);
-              }
-            } catch(e) {
-              cleanup();
-              reject(new Error("レスポンス解析エラー: " + e.message));
-            }
-          };
-
-          // 非表示フォームを作成してiframeにPOST（本物の画像データを送信）
-          const form = document.createElement("form");
-          form.id      = iframeId + "_form";
-          form.method  = "POST";
-          form.action  = GAS_URL;
-          form.target  = iframeId;
-          form.enctype = "application/x-www-form-urlencoded";
-          form.style.display = "none";
-
-          const input = document.createElement("input");
-          input.type  = "hidden";
-          input.name  = "data";
-          input.value = JSON.stringify({
-            func: "saveMedicalCertPhoto",
-            params: [String(patientNum), String(patientName), imgData]
-          });
-          form.appendChild(input);
-          document.body.appendChild(form);
-          form.submit();
-
-        } catch(err) {
-          reject(err);
-        }
+      // 全チャンク送信完了後、結合して保存を指示
+      const finalPayload = JSON.stringify({
+        func: "saveMedicalCertFinalize",
+        params: [sessionId, String(patientNum), String(patientName)]
       });
+      const finalUrl = GAS_URL + "?payload=" + encodeURIComponent(finalPayload);
+      const finalRes = await fetch(finalUrl, { method: "GET", mode: "cors", credentials: "omit" });
+      if (!finalRes.ok) throw new Error("保存失敗: HTTP " + finalRes.status);
+      const result = await finalRes.json();
+
+      if (result && result.needsRetry === true) {
+        throw new Error("再撮影が必要です: " + (result.message || "画像が不鮮明です"));
+      }
+      return result;
     }
 
     // =========================================================
