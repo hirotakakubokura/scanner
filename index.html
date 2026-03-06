@@ -139,12 +139,10 @@
       });
     }
 
-    // 医療証アップロード：
-    // 1. no-cors POSTでGASに送信（レスポンスは読まない）
-    // 2. 送信後すぐ成功とみなして次へ進む
-    // GASはバックグラウンドで画像保存・AI解析を行う
+    // 医療証アップロード：no-cors POST（レスポンス不要、即完了）
     async function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
-      const compressed = await compressImageBase64(base64Data, 600, 0.5);
+      // 300px/0.4に圧縮（AIが読める＆iPadで軽い）
+      const compressed = await compressImageBase64(base64Data, 300, 0.4);
       let imgData = compressed;
       if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
 
@@ -153,8 +151,7 @@
         params: [String(patientNum), String(patientName), imgData]
       });
 
-      // no-cors POSTで送信（Safariのタイムアウトを回避）
-      // レスポンスは読めないがGASは正常に処理する
+      // no-cors POST：awaitしない（レスポンス不要）
       fetch(GAS_URL, {
         method: "POST",
         mode: "no-cors",
@@ -162,7 +159,6 @@
         body: body
       }).catch(() => {});
 
-      // 送信開始したら即座に成功を返す（GASのAI処理を待たない）
       return { success: true };
     }
 
@@ -314,13 +310,12 @@
 
     async function medCertUpload() {
       if(!medCertCapturedImage||!medCertSelectedPatient){alert("エラーが発生しました");return;}
-      loading.textContent="AIで解析中..."; loading.style.display="flex";
+      loading.textContent="送信中..."; loading.style.display="flex";
       try {
         await callGAS_saveMedicalCert(String(medCertSelectedPatient.num), String(medCertSelectedPatient.name), medCertCapturedImage);
         loading.style.display="none";
         document.getElementById("medical-cert-ui").style.display="none";
         stopMedCertCamera();
-        // no-corsのためAI解析結果は取得できないが保存は完了している
         showOcrResultModal({ success: true });
       } catch(e) { loading.style.display="none"; alert("保存エラー: "+e); startQrCamera("medcert-upload-failed"); }
     }
