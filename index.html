@@ -432,32 +432,55 @@
       });
     }
 
-    // 医療証画像専用：POST方式（ヘッダーなし＝プリフライトなし）
+    // 医療証画像専用：no-cors POST → ポーリング方式
+    // GASはPOST後にリダイレクトするためレスポンスが読めない
+    // → no-corsでPOSTだけ送り、結果はGASにキャッシュさせてGETでポーリング取得
     async function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
       const compressed = await compressImageBase64(base64Data, 800, 0.6);
       let imgData = compressed;
       if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
 
+      // セッションIDを生成（結果取得のキー）
+      const sessionId = "s" + Date.now() + Math.random().toString(36).slice(2, 6);
+
       const bodyStr = JSON.stringify({
         func: "saveMedicalCertPhoto",
-        params: [String(patientNum), String(patientName), imgData]
+        params: [String(patientNum), String(patientName), imgData],
+        sessionId: sessionId
       });
 
-      // Content-Typeヘッダーを省略することでSafariのプリフライトを回避
-      const res = await fetch(GAS_URL, {
+      // no-corsでPOST（リダイレクトをブロックしない・レスポンスは読めない）
+      await fetch(GAS_URL, {
         method: "POST",
+        mode: "no-cors",
         body: bodyStr
       });
 
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const text = await res.text();
-      const clean = text.replace(/<[^>]*>/g, "").trim();
-      const result = JSON.parse(clean);
-      if (result && result.needsRetry === true) {
-        throw new Error("再撮影が必要です: " + (result.message || "画像が不鮮明です"));
+      // GASが処理完了するまでポーリング（最大60秒）
+      const pollUrl = GAS_URL + "?payload=" + encodeURIComponent(JSON.stringify({
+        func: "getSessionResult",
+        params: [sessionId]
+      }));
+
+      for (let i = 0; i < 30; i++) {
+        await new Promise(r => setTimeout(r, 2000));
+        try {
+          const pollRes = await fetch(pollUrl, { method: "GET", mode: "cors", credentials: "omit" });
+          if (!pollRes.ok) continue;
+          const data = await pollRes.json();
+          if (data && data.status === "done") {
+            if (data.result && data.result.needsRetry === true) {
+              throw new Error("再撮影が必要です: " + (data.result.message || "画像が不鮮明です"));
+            }
+            return data.result;
+          }
+        } catch(e) {
+          if (e.message && e.message.indexOf("再撮影") !== -1) throw e;
+          // まだ処理中の場合は続ける
+        }
       }
-      return result;
-    });
+      throw new Error("タイムアウト：GASの処理が完了しませんでした");
+    }
         const testUrl = GAS_URL + "?payload=" + encodeURIComponent(testPayload);
         try {
           const testRes = await fetch(testUrl, { method: "GET", mode: "cors", credentials: "omit" });
