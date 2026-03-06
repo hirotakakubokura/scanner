@@ -139,10 +139,9 @@
       });
     }
 
-    // 医療証アップロード：サイズを確認しながら段階的に圧縮してGETで送信
+    // 医療証アップロード：80px/0.15に圧縮してGETで送信
     async function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
-      // まず100px/0.2で圧縮（確実にURL制限内に収める）
-      const compressed = await compressImageBase64(base64Data, 100, 0.2);
+      const compressed = await compressImageBase64(base64Data, 80, 0.15);
       let imgData = compressed;
       if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
 
@@ -151,10 +150,6 @@
         params: [String(patientNum), String(patientName), imgData]
       });
       const encoded = encodeURIComponent(payload);
-
-      // URL長をデバッグ表示（確認後に削除）
-      console.log("payload文字数:", payload.length, "encoded文字数:", encoded.length);
-
       const url = GAS_URL + "?payload=" + encoded;
       const res = await fetch(url, { method: "GET", mode: "cors", credentials: "omit" });
       if (!res.ok) throw new Error("HTTP " + res.status);
