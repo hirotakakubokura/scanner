@@ -436,34 +436,43 @@
 
     // 医療証画像専用：3段階方式
     // 医療証画像専用：POSTでGASに送信（HtmlOutput経由でCORS回避）
-    // 医療証画像専用：GET方式（POSTはSafari/iPadOSでCORSブロックされるため）
-    // 画像を小さく圧縮してGETのpayloadで送信する
+    // 医療証画像専用：デバッグ版
     async function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
-      // 画像を強めに圧縮（GETのURL長制限に収める）
-      const compressed = await compressImageBase64(base64Data, 600, 0.4);
-      let imgData = compressed;
-      if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
+      try {
+        const compressed = await compressImageBase64(base64Data, 400, 0.3);
+        let imgData = compressed;
+        if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
 
-      console.log("圧縮後base64長:", imgData.length);
+        alert("【デバッグ1】圧縮後base64長: " + imgData.length + "\n（100000以下なら送信可能）");
 
-      const body = JSON.stringify({
-        func: "saveMedicalCertPhoto",
-        params: [String(patientNum), String(patientName), imgData]
-      });
+        const body = JSON.stringify({
+          func: "saveMedicalCertPhoto",
+          params: [String(patientNum), String(patientName), imgData]
+        });
 
-      const url = GAS_URL + "?payload=" + encodeURIComponent(body);
-      console.log("送信URL長:", url.length);
+        const url = GAS_URL + "?payload=" + encodeURIComponent(body);
+        alert("【デバッグ2】URL長: " + url.length + "\n送信開始...");
 
-      const res = await fetch(url, { method: "GET" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
+        const res = await fetch(url, { method: "GET" });
+        alert("【デバッグ3】HTTPステータス: " + res.status);
 
-      const result = await res.json();
+        if (!res.ok) throw new Error("HTTP " + res.status);
 
-      if (result && result.needsRetry === true) {
-        throw new Error("再撮影が必要です: " + (result.message || "画像が不鮮明です"));
+        const text = await res.text();
+        alert("【デバッグ4】GAS応答（先頭200字）:\n" + text.substring(0, 200));
+
+        const result = JSON.parse(text);
+
+        if (result && result.needsRetry === true) {
+          throw new Error("再撮影が必要です: " + (result.message || "画像が不鮮明です"));
+        }
+
+        return result;
+
+      } catch(err) {
+        alert("【デバッグERROR】\n" + err.name + ": " + err.message);
+        throw err;
       }
-
-      return result;
     }
 
     // =========================================================
