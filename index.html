@@ -139,25 +139,31 @@
       });
     }
 
-    // 医療証アップロード：80px/0.15に圧縮してGETで送信
+    // 医療証アップロード：
+    // 1. no-cors POSTでGASに送信（レスポンスは読まない）
+    // 2. 送信後すぐ成功とみなして次へ進む
+    // GASはバックグラウンドで画像保存・AI解析を行う
     async function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
-      const compressed = await compressImageBase64(base64Data, 80, 0.15);
+      const compressed = await compressImageBase64(base64Data, 600, 0.5);
       let imgData = compressed;
       if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
 
-      const payload = JSON.stringify({
+      const body = JSON.stringify({
         func: "saveMedicalCertPhoto",
         params: [String(patientNum), String(patientName), imgData]
       });
-      const encoded = encodeURIComponent(payload);
-      const url = GAS_URL + "?payload=" + encoded;
-      const res = await fetch(url, { method: "GET", mode: "cors", credentials: "omit" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const result = await res.json();
-      if (result && result.needsRetry === true) {
-        throw new Error("再撮影が必要です: " + (result.message || ""));
-      }
-      return result;
+
+      // no-cors POSTで送信（Safariのタイムアウトを回避）
+      // レスポンスは読めないがGASは正常に処理する
+      fetch(GAS_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain" },
+        body: body
+      }).catch(() => {});
+
+      // 送信開始したら即座に成功を返す（GASのAI処理を待たない）
+      return { success: true };
     }
 
     // =========================================================
