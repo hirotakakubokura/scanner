@@ -403,17 +403,15 @@
 
   <script>
     // =========================================================
-    // GAS API URL（fetchで通信）
+    // GAS関数呼び出し（google.script.run方式）
     // =========================================================
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbz3LgHl80x5jiZrabVYNFSbRnwSE3O_gYJrtvEtBOezzk7uPUTNWgsfPMBOedO31ioDmA/exec";
-
-    // GAS関数を呼ぶ共通fetch関数（GET方式：CORS問題を回避）
-    async function callGAS(funcName, params) {
-      const body = JSON.stringify({ func: funcName, params: params });
-      const url = GAS_URL + "?payload=" + encodeURIComponent(body);
-      const res = await fetch(url, { method: "GET" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      return await res.json();
+    function callGAS(funcName, params) {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .dispatchFunction(funcName, params);
+      });
     }
 
     // 画像をCanvas経由で圧縮する
@@ -434,37 +432,46 @@
       });
     }
 
-    // 医療証画像専用：3段階方式
-    // 医療証画像専用：POSTでGASに送信（HtmlOutput経由でCORS回避）
-    // 医療証画像専用：チャンク分割GET方式
-    // 画像を小さく分割してGETで送り、GAS側で結合して保存する
+    // 医療証画像専用：POST方式（ヘッダーなし＝プリフライトなし）
     async function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
       const compressed = await compressImageBase64(base64Data, 800, 0.6);
       let imgData = compressed;
       if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
 
-      const CHUNK_SIZE = 8000; // 1チャンクあたりの文字数
-      const sessionId = "sess_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
-      const totalChunks = Math.ceil(imgData.length / CHUNK_SIZE);
+      const bodyStr = JSON.stringify({
+        func: "saveMedicalCertPhoto",
+        params: [String(patientNum), String(patientName), imgData]
+      });
 
-      // ローディングメッセージ更新
-      const loadingEl = document.getElementById("loading");
+      // Content-Typeヘッダーを省略することでSafariのプリフライトを回避
+      const res = await fetch(GAS_URL, {
+        method: "POST",
+        body: bodyStr
+      });
 
-      // チャンクを順番に送信
-      for (let i = 0; i < totalChunks; i++) {
-        if (loadingEl) loadingEl.textContent = "送信中... " + (i+1) + "/" + totalChunks;
-        const chunk = imgData.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-        const payload = JSON.stringify({
-          func: "saveMedicalCertChunk",
-          params: [sessionId, i, totalChunks, chunk, String(patientNum), String(patientName)]
-        });
-        const url = GAS_URL + "?payload=" + encodeURIComponent(payload);
-        const res = await fetch(url, { method: "GET", mode: "cors", credentials: "omit" });
-        if (!res.ok) throw new Error("チャンク送信失敗: HTTP " + res.status);
-        const data = await res.json();
-        if (data.error) throw new Error("チャンクエラー: " + data.error);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const text = await res.text();
+      const clean = text.replace(/<[^>]*>/g, "").trim();
+      const result = JSON.parse(clean);
+      if (result && result.needsRetry === true) {
+        throw new Error("再撮影が必要です: " + (result.message || "画像が不鮮明です"));
       }
-      if (loadingEl) loadingEl.textContent = "AIで解析中...";
+      return result;
+    });
+        const testUrl = GAS_URL + "?payload=" + encodeURIComponent(testPayload);
+        try {
+          const testRes = await fetch(testUrl, { method: "GET", mode: "cors", credentials: "omit" });
+          if (testRes.ok) {
+            maxOk = sz;
+          } else {
+            break;
+          }
+        } catch(e) {
+          break;
+        }
+      }
+      alert("SafariでOKだったチャンクの最大文字数: " + maxOk);
+      throw new Error("テスト完了: 最大=" + maxOk + "文字");
 
       // 全チャンク送信完了後、結合して保存を指示
       const finalPayload = JSON.stringify({
