@@ -436,22 +436,84 @@
 
     // 医療証画像専用：3段階方式
     // 医療証画像専用：POSTでGASに送信（HtmlOutput経由でCORS回避）
-    // 医療証画像専用：画像なしテスト版（原因切り分け用）
-    async function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
-      // ★テスト：画像データなしで番号と名前だけ送信してGAS疎通確認
-      alert("テスト送信開始: " + patientNum + " / " + patientName);
-      const body = JSON.stringify({
-        func: "getTodayCheckedInNums",
-        params: []
+    // 医療証画像専用：iframe form POST方式（本番版）
+    function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
+      return new Promise(async (resolve, reject) => {
+        try {
+          const compressed = await compressImageBase64(base64Data, 800, 0.6);
+          let imgData = compressed;
+          if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
+
+          const iframeId = "medcert_iframe_" + Date.now();
+
+          // タイムアウト60秒
+          const timer = setTimeout(() => {
+            cleanup();
+            reject(new Error("タイムアウト（60秒）"));
+          }, 60000);
+
+          function cleanup() {
+            clearTimeout(timer);
+            const ifr = document.getElementById(iframeId);
+            if (ifr) ifr.remove();
+            const frm = document.getElementById(iframeId + "_form");
+            if (frm) frm.remove();
+          }
+
+          // 非表示iframe作成
+          const iframe = document.createElement("iframe");
+          iframe.id   = iframeId;
+          iframe.name = iframeId;
+          iframe.style.display = "none";
+          document.body.appendChild(iframe);
+
+          // iframeのonloadでGASのレスポンスを取得
+          let loadCount = 0;
+          iframe.onload = function() {
+            loadCount++;
+            if (loadCount < 2) return;
+            try {
+              const ifrDoc = iframe.contentDocument || iframe.contentWindow.document;
+              const text = ifrDoc.body ? ifrDoc.body.innerText || ifrDoc.body.textContent : "";
+              cleanup();
+              if (!text) { reject(new Error("GASから応答がありません")); return; }
+              const clean = text.replace(/<[^>]*>/g, "").trim();
+              const result = JSON.parse(clean);
+              if (result && result.needsRetry === true) {
+                reject(new Error("再撮影が必要です: " + (result.message || "画像が不鮮明です")));
+              } else {
+                resolve(result);
+              }
+            } catch(e) {
+              cleanup();
+              reject(new Error("レスポンス解析エラー: " + e.message));
+            }
+          };
+
+          // 非表示フォームを作成してiframeにPOST（本物の画像データを送信）
+          const form = document.createElement("form");
+          form.id      = iframeId + "_form";
+          form.method  = "POST";
+          form.action  = GAS_URL;
+          form.target  = iframeId;
+          form.enctype = "application/x-www-form-urlencoded";
+          form.style.display = "none";
+
+          const input = document.createElement("input");
+          input.type  = "hidden";
+          input.name  = "data";
+          input.value = JSON.stringify({
+            func: "saveMedicalCertPhoto",
+            params: [String(patientNum), String(patientName), imgData]
+          });
+          form.appendChild(input);
+          document.body.appendChild(form);
+          form.submit();
+
+        } catch(err) {
+          reject(err);
+        }
       });
-      const url = GAS_URL + "?payload=" + encodeURIComponent(body);
-      alert("URL長: " + url.length);
-      const res = await fetch(url, { method: "GET", mode: "cors", credentials: "omit" });
-      alert("ステータス: " + res.status);
-      const text = await res.text();
-      alert("応答: " + text.substring(0, 100));
-      // ダミー成功を返す
-      return { success: true, message: "テスト成功", futanNumber: "テスト", jukyushaNumber: "テスト", validFrom: "", validTo: "" };
     }
 
     // =========================================================
