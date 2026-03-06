@@ -436,43 +436,28 @@
 
     // 医療証画像専用：3段階方式
     // 医療証画像専用：POSTでGASに送信（HtmlOutput経由でCORS回避）
+    // 医療証画像専用：GET方式（POSTはSafari/iPadOSでCORSブロックされるため）
+    // 画像を小さく圧縮してGETのpayloadで送信する
     async function callGAS_saveMedicalCert(patientNum, patientName, base64Data) {
-      // 画像を圧縮
-      const compressed = await compressImageBase64(base64Data, 800, 0.6);
+      // 画像を強めに圧縮（GETのURL長制限に収める）
+      const compressed = await compressImageBase64(base64Data, 600, 0.4);
       let imgData = compressed;
       if (imgData.indexOf("base64,") !== -1) imgData = imgData.split("base64,")[1];
 
+      console.log("圧縮後base64長:", imgData.length);
+
       const body = JSON.stringify({
         func: "saveMedicalCertPhoto",
-        params: [patientNum, patientName, imgData]
+        params: [String(patientNum), String(patientName), imgData]
       });
 
-      // GASはHtmlOutputでCORSを回避できる
-      const res = await fetch(GAS_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: body
-      });
+      const url = GAS_URL + "?payload=" + encodeURIComponent(body);
+      console.log("送信URL長:", url.length);
 
+      const res = await fetch(url, { method: "GET" });
       if (!res.ok) throw new Error("HTTP " + res.status);
 
-      // GASがHtmlOutputで返す場合、テキストをJSONとしてパース
-      const text = await res.text();
-      console.log("GAS response:", text.substring(0, 300));
-
-      let result;
-      try {
-        result = JSON.parse(text);
-      } catch(e) {
-        // HTMLタグが含まれている場合は取り除く
-        const clean = text.replace(/<[^>]*>/g, "").trim();
-        try {
-          result = JSON.parse(clean);
-        } catch(e2) {
-          // パースできない場合はそのまま表示してデバッグ
-          throw new Error("GASエラー内容: " + clean.substring(0, 200));
-        }
-      }
+      const result = await res.json();
 
       if (result && result.needsRetry === true) {
         throw new Error("再撮影が必要です: " + (result.message || "画像が不鮮明です"));
