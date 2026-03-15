@@ -250,7 +250,7 @@
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbz3LgHl80x5jiZrabVYNFSbRnwSE3O_gYJrtvEtBOezzk7uPUTNWgsfPMBOedO31ioDmA/exec";
     const LIFF_ID = "2009006702-0vzXPgJs";
-    const APP_VERSION = "4.3.0";
+    const APP_VERSION = "4.2.0";
     async function callGAS(funcName, params) {
       const payload = encodeURIComponent(JSON.stringify({ func: funcName, params: params || [] }));
       const res = await fetch(GAS_URL + "?payload=" + payload, { redirect: "follow", method: "GET" });
@@ -343,9 +343,20 @@
     function onMedCertFileSelected(input){const file=input.files&&input.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){const dataUrl=e.target.result;if(!dataUrl||dataUrl.length<200){alert("画像の読み込みに失敗しました。");return;}indexMedCertImage=dataUrl;openPreviewModal(indexMedCertImage);};reader.onerror=function(){alert("画像読み込みエラー。");};reader.readAsDataURL(file);}
     async function indexMedCertUpload(){
       if(!indexMedCertImage){alert("画像がありません。");return;}
-      closePreviewModal();showSpin("画像を保存中...");
+      closePreviewModal();showSpin("画像を準備中...");
       try{
-        const result=await callGAS_saveMedicalCert(MY_NUM,MY_NAME,indexMedCertImage);
+        let imgData=indexMedCertImage;
+        if(imgData.indexOf("base64,")!==-1)imgData=imgData.split("base64,")[1];
+        const CHUNK_SIZE=50000;
+        const totalChunks=Math.ceil(imgData.length/CHUNK_SIZE);
+        const sessionId="sess_"+Date.now()+"_"+Math.random().toString(36).substr(2,9);
+        for(let i=0;i<totalChunks;i++){
+          showSpin("画像を送信中... ("+(i+1)+"/"+totalChunks+")");
+          const chunk=imgData.substring(i*CHUNK_SIZE,(i+1)*CHUNK_SIZE);
+          await callGAS("saveMedicalCertChunk",[sessionId,i,totalChunks,chunk,MY_NUM,MY_NAME]);
+        }
+        showSpin("AIで解析中...");
+        const result=await callGAS("saveMedicalCertFinalize",[sessionId,MY_NUM,MY_NAME]);
         hideSpin();
         showIndexOcrResultModal(result);
       }catch(e){hideSpin();alert("保存エラー: "+e.message);}
