@@ -1,6 +1,3 @@
-<!-- =========================
- index.html v3.2.0 - 電源OFF後もQR確実復元（サーバー側uid紐付け方式）
-========================= -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -28,7 +25,7 @@
     .btn:active { transform:translateY(3px); box-shadow:0 2px 0 #E65100; }
     .btn[disabled] { opacity:.55; cursor:not-allowed; transform:none !important; }
     .sub-btn { background:white; border:3px solid var(--main); color:var(--text); padding:15px; border-radius:15px; width:100%; margin:10px 0; font-weight:bold; font-size:1.05em; cursor:pointer; display:block; box-sizing:border-box; transition:all 0.1s; }
-    .sub-btn:active  { background:#FFF9E1; }
+    .sub-btn:active { background:#FFF9E1; }
     .sub-btn[disabled] { opacity:.6; cursor:not-allowed; }
     .cat-char { width:110px; height:110px; margin:20px auto 0; display:block; }
     .cat-char svg { width:100%; height:100%; }
@@ -54,12 +51,11 @@
     .medical-question { background:#FFF9E1; border:3px solid #FFD54F; border-radius:20px; padding:20px; margin:15px 0; text-align:center; }
     .medical-question p { font-weight:bold; font-size:1.2em; margin:0 0 15px; }
     .yes-no-buttons { display:flex; gap:10px; justify-content:center; }
-    .yes-no-buttons button { padding:12px 25px; border-radius:15px; border:none; font-size:1.2em; font-weight:bold; cursor:pointer; }
-    .yes-btn { background:#FF6F00; color:white; }
-    .no-btn  { background:#ddd; color:#666; }
+    .yes-btn { background:#FF6F00; color:white; padding:12px 25px; border-radius:15px; font-size:1.2em; font-weight:bold; }
+    .no-btn  { background:#ddd; color:#666; padding:12px 25px; border-radius:15px; border:none; font-size:1.2em; font-weight:bold; cursor:pointer; }
     .modal-btn { padding:12px 20px; border-radius:15px; border:none; font-weight:bold; cursor:pointer; font-size:1.1em; }
-    .modal-btn-primary  { background:#FF6F00; color:white; }
-    .modal-btn-secondary{ background:#ddd; color:#666; }
+    .modal-btn-primary   { background:#FF6F00; color:white; }
+    .modal-btn-secondary { background:#ddd; color:#666; }
     #preview-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:31000; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
     #preview-modal .preview-title { color:white; font-weight:900; font-size:1.2em; margin:0 0 16px; text-align:center; }
     #preview-modal img { width:100%; max-width:500px; max-height:55vh; object-fit:contain; border-radius:16px; border:4px solid var(--main); background:#222; min-height:120px; }
@@ -106,7 +102,7 @@
           </svg>
         </div>
         <div class="family-box" style="margin-top:16px;">
-          <h3 class="family-title">世帯まとめQR（1回スキャン）</h3>
+          <h3 class="family-title">世帯まとめQR（1回uxスキャン）</h3>
           <div class="mini">このQRをiPadで読むと、家族一覧が出るので院内で選べます</div>
           <div class="fam-qr-wrap"><div class="fam-qr-mini"><img id="groupQr" src="" alt="世帯QR" /></div></div>
         </div>
@@ -115,16 +111,15 @@
           <div id="familyList"></div>
           <hr style="border:none; border-top:2px dashed #FFD54F; margin:16px 0;" />
           <div class="mini">家族を追加する（番号 または カナ＋生年月日）</div>
-          <input type="number" id="addFamNum"   placeholder="診察券番号で追加" />
+          <input type="number" id="addFamNum" placeholder="診察券番号で追加" />
           <div class="mini" style="margin:6px 0;">または</div>
-          <input type="text"   id="addFamKana"  placeholder="おなまえ（カタカナ）" />
-          <input type="date"   id="addFamBirth" />
+          <input type="text" id="addFamKana" placeholder="おなまえ（カタカナ）" />
+          <input type="date" id="addFamBirth" />
           <button id="addFamBtn" class="sub-btn" onclick="searchAndConfirmFamily()">家族をさがす</button>
         </div>
         <button class="medical-cert-btn" onclick="openIndexMedicalCert()">📷 医療証を登録・更新</button>
-        <button class="sub-btn" onclick="forceResetProcess()">登録を解除してやり直す</button>
+        <button class="sub-btn" style="margin-top:20px;" onclick="forceResetProcess()">登録を解除してやり直す</button>
       </div>
-
       <div id="setupArea" style="display:none;">
         <p style="font-weight:bold; color:#795548; margin-bottom:25px; line-height:1.7;">「診察券をスマホにいれるよ！<br />番号を入力するか、名前でさがしてね」</p>
         <div id="inputModeArea">
@@ -134,7 +129,7 @@
           <button class="sub-btn" onclick="switchMode('search')" style="border:none; background:transparent; text-decoration:underline;">番号がわからないとき</button>
         </div>
         <div id="searchModeArea" style="display:none;">
-          <input type="text" id="kanaInput"  placeholder="おなまえ（カタカナ）" />
+          <input type="text" id="kanaInput" placeholder="おなまえ（カタカナ）" />
           <input type="date" id="birthInput" />
           <div id="loadingMsg2" class="loading">さがしているよ...</div>
           <button id="searchBtn" class="btn" onclick="executeSearch()">診察券をさがす</button>
@@ -150,12 +145,12 @@
           <button class="sub-btn" style="border:none; margin-top:15px;" onclick="switchMode('input')">もどる</button>
         </div>
         <div id="newPatientBatchArea" style="display:none;">
-          <div id="batchHeader" style="font-weight:bold; margin-bottom:15px; color:#4FC3F7; font-size:1.1em;">👤 新患登録 <span id="batchProgress">1人目 / 2人</span></div>
+          <div style="font-weight:bold; margin-bottom:15px; color:#4FC3F7; font-size:1.1em;">👤 新患登録 <span id="batchProgress">1人目 / 2人</span></div>
           <input type="text" id="batchNameKanji" placeholder="お名前（漢字）" style="text-align:center;" />
-          <input type="text" id="batchKanaSei"   placeholder="姓（カナ）" style="width:48%; display:inline-block;" />
-          <input type="text" id="batchKanaMei"   placeholder="名（カナ）" style="width:48%; display:inline-block; margin-left:4%;" />
+          <input type="text" id="batchKanaSei" placeholder="姓（カナ）" style="width:48%; display:inline-block;" />
+          <input type="text" id="batchKanaMei" placeholder="名（カナ）" style="width:48%; display:inline-block; margin-left:4%;" />
           <input type="date" id="batchBirthday" />
-          <input type="tel"  id="batchPhone" placeholder="電話番号（保護者の電話番号可）" inputmode="tel" />
+          <input type="tel" id="batchPhone" placeholder="電話番号（保護者の電話番号可）" inputmode="tel" />
           <button id="batchNextBtn" class="btn" onclick="addToBatchAndNext()">次の方を入力</button>
           <button class="sub-btn" style="border:none;" onclick="cancelBatchRegistration()">キャンセル</button>
         </div>
@@ -168,25 +163,14 @@
           <button class="sub-btn" style="border:none;" onclick="backToBatchInput()">もどる</button>
         </div>
         <div id="newPatientEditArea" style="display:none;">
-          <div id="editHeader" style="font-weight:bold; margin-bottom:15px; color:#4FC3F7; font-size:1.1em;">👤 <span id="editTargetName"></span> の修正</div>
+          <div style="font-weight:bold; margin-bottom:15px; color:#4FC3F7; font-size:1.1em;">👤 <span id="editTargetName"></span> の修正</div>
           <input type="text" id="editNameKanji" placeholder="お名前（漢字）" style="text-align:center;" />
-          <input type="text" id="editKanaSei"   placeholder="姓（カナ）" style="width:48%; display:inline-block;" />
-          <input type="text" id="editKanaMei"   placeholder="名（カナ）" style="width:48%; display:inline-block; margin-left:4%;" />
+          <input type="text" id="editKanaSei" placeholder="姓（カナ）" style="width:48%; display:inline-block;" />
+          <input type="text" id="editKanaMei" placeholder="名（カナ）" style="width:48%; display:inline-block; margin-left:4%;" />
           <input type="date" id="editBirthday" />
-          <input type="tel"  id="editPhone" placeholder="電話番号（保護者の電話番号可）" inputmode="tel" />
+          <input type="tel" id="editPhone" placeholder="電話番号（保護者の電話番号可）" inputmode="tel" />
           <button class="btn" onclick="saveEdit()">修正を保存</button>
           <button class="sub-btn" style="border:none;" onclick="cancelEdit()">キャンセル</button>
-        </div>
-        <div id="newPatientModeArea" style="display:none;">
-          <p style="font-weight:bold; margin-bottom:15px; color:#4FC3F7;">👤 初めての方</p>
-          <input type="text" id="newNameKanji" placeholder="お名前（漢字）" />
-          <input type="text" id="newKanaSei"   placeholder="姓（カナ）" style="width:48%; display:inline-block;" />
-          <input type="text" id="newKanaMei"   placeholder="名（カナ）" style="width:48%; display:inline-block; margin-left:4%;" />
-          <input type="date" id="newBirthday" />
-          <input type="tel"  id="newPhone" placeholder="電話番号（保護者の電話番号可）" inputmode="tel" />
-          <div id="loadingMsg3" class="loading">登録中...</div>
-          <button id="newPatientBtn" class="btn" onclick="registerNewPatient()">新患登録する</button>
-          <button class="sub-btn" style="border:none;" onclick="switchMode('input')">もどる</button>
         </div>
         <button class="sub-btn" onclick="switchMode('newpatient')" style="margin-top:20px; background:#4FC3F7; color:white; border:2px solid #0288D1;">👤 初めての方はこちら</button>
         <div class="cat-char" style="opacity:0.6;">
@@ -208,12 +192,7 @@
       </div>
     </div>
   </div>
-
-  <div id="spin" class="spin-overlay">
-    <div class="spinner"></div>
-    <div id="spinText">まほうを かけてるよ...</div>
-  </div>
-
+  <div id="spin" class="spin-overlay"><div class="spinner"></div><div id="spinText">まほうを かけてるよ...</div></div>
   <div id="index-medical-modal" class="medical-modal">
     <div class="medical-modal-content">
       <h2>医療証の登録</h2>
@@ -222,7 +201,7 @@
           <p style="font-size:1.3em; margin-bottom:20px;">医療証をお持ちですか？</p>
           <p style="font-size:0.9em; color:#666; margin-bottom:20px;">※ 18歳未満の方（2026年6月より）は小児医療証の登録が必要です</p>
           <div class="yes-no-buttons">
-            <label for="index-medcert-file-input" class="yes-btn" onclick="onYesLabelClick('newpatient')" style="display:flex; align-items:center; justify-content:center; cursor:pointer;">はい（撮影する）</label>
+            <label for="index-medcert-file-input" class="yes-btn" onclick="onYesLabelClick()" style="display:flex; align-items:center; justify-content:center; cursor:pointer;">はい（撕影する）</label>
             <button class="no-btn" onclick="indexMedCertNewPatientNo()">いいえ（持っていない）</button>
           </div>
         </div>
@@ -231,7 +210,7 @@
         <div class="medical-question">
           <p>医療証に変更はありますか？</p>
           <div class="yes-no-buttons">
-            <label for="index-medcert-file-input" class="yes-btn" onclick="onYesLabelClick('existing')" style="display:flex; align-items:center; justify-content:center; cursor:pointer;">はい</label>
+            <label for="index-medcert-file-input" class="yes-btn" onclick="onYesLabelClick()" style="display:flex; align-items:center; justify-content:center; cursor:pointer;">はい</label>
             <button class="no-btn" onclick="indexMedCertNo()">いいえ</button>
           </div>
         </div>
@@ -239,866 +218,164 @@
       <button class="sub-btn" onclick="closeIndexMedicalCert()" style="margin-top:20px;">閉じる</button>
     </div>
   </div>
-
   <input type="file" id="index-medcert-file-input" accept="image/*;capture=camera" capture="environment" style="display:none;" onchange="onMedCertFileSelected(this)" />
-
   <div id="preview-modal">
     <p class="preview-title">この写真でよろしいですか？</p>
-    <img id="index-medcert-preview" alt="撮影プレビュー" />
+    <img id="index-medcert-preview" alt="撕影プレビュー" />
     <div class="preview-actions">
-      <label for="index-medcert-file-input" class="btn-retake" onclick="onRetakeLabelClick()" style="display:flex; align-items:center; justify-content:center; cursor:pointer;">撮り直す</label>
+      <label for="index-medcert-file-input" class="btn-retake" onclick="onRetakeLabelClick()" style="display:flex; align-items:center; justify-content:center; cursor:pointer;">撕り直す</label>
       <button class="btn-save" onclick="indexMedCertUpload()">保存する</button>
     </div>
   </div>
-
   <div id="searchConfirmModal" class="medical-modal" style="display:none;">
     <div class="medical-modal-content">
       <h2 id="searchConfirmTitle" style="text-align:center; color:var(--sky); margin-bottom:20px;">確認</h2>
-      <p id="searchConfirmMessage" style="text-align:center; font-size:1.3em; margin-bottom:30px;"></p>
+      <p id="searchConfirmMessage" style="text-align:center; font-size:1.3em; margin-bottom:30px; white-space:pre-wrap;"></p>
       <div style="display:flex; gap:15px; justify-content:center;">
         <button id="searchConfirmCancelBtn" class="modal-btn modal-btn-secondary" onclick="closeSearchConfirm(false)" style="flex:1; max-width:150px;">キャンセル</button>
-        <button id="searchConfirmOkBtn"     class="modal-btn modal-btn-primary"   onclick="closeSearchConfirm(true)"  style="flex:1; max-width:150px;">OK</button>
+        <button id="searchConfirmOkBtn" class="modal-btn modal-btn-primary" onclick="closeSearchConfirm(true)" style="flex:1; max-width:150px;">OK</button>
       </div>
     </div>
   </div>
-
   <div id="index-ocr-result-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:none; z-index:20000;">
     <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:white; border-radius:22px; padding:26px; width:86%; max-width:520px; box-shadow:0 10px 40px rgba(0,0,0,0.5); text-align:center;">
       <h2 id="index-ocr-result-title" style="margin:0 0 16px; color:#4FC3F7; font-size:1.6em;">結果</h2>
       <div id="index-ocr-result-content" style="background:#FFF9E1; border:3px solid #FFD54F; border-radius:16px; padding:18px; margin:16px 0; text-align:left; font-size:1.05em; line-height:1.6;"></div>
       <div style="display:flex; gap:12px; margin-top:14px;">
-        <button id="index-ocr-left-btn"  style="flex:1; background:#ddd; color:#666; border:none; padding:14px 12px; font-size:1.1em; border-radius:14px; cursor:pointer; font-weight:900;">撮り直す</button>
+        <button id="index-ocr-left-btn" style="flex:1; background:#ddd; color:#666; border:none; padding:14px 12px; font-size:1.1em; border-radius:14px; cursor:pointer; font-weight:900;">撕り直す</button>
         <button id="index-ocr-right-btn" style="flex:1; background:#4FC3F7; color:white; border:none; padding:14px 12px; font-size:1.1em; border-radius:14px; cursor:pointer; font-weight:900; box-shadow:0 4px 0 #0288D1;">OK</button>
       </div>
     </div>
   </div>
-
   <script>
-    const APP_VERSION = "3.4.0";
-    (function(){
-      const sv = localStorage.getItem('app_version');
-      if(sv !== APP_VERSION){
-        localStorage.setItem('app_version', APP_VERSION);
-        if('caches' in window) caches.keys().then(ns=>ns.forEach(n=>caches.delete(n)));
-      }
-    })();
-
-    const LIFF_ID_VAL  = "<?= liffId ?>";
-    const SERVER_NUM   = "<?= patientNum ?>";
-    const SERVER_NAME  = "<?= patientName ?>";
-    // ★GASから直接埋め込まれたLINE userId（liff.init()不要）
-    const SERVER_UID   = "<?= lineUserId ?>";
-
-    let CURRENT_UID = SERVER_UID || "", MY_NUM = "", MY_NAME = "", GROUP_ID = "";
-    let FAMILY = [], addBusy = false;
-    let searchConfirmCallback = null;
-
-    // ================================================================
-    //  localStorageキャッシュ（補助・仮表示用）
-    //  ★v3.2.0: これはあくまで補助。電源OFFで消えた場合でも
-    //            サーバー側のuid紐付けで確実に復元される。
-    // ================================================================
-    const CACHE_KEY_V2 = "tdl_patient_cache_v2";
-    const CACHE_KEY    = "tdl_family_cache_v1"; // 旧キー互換
-
-    function saveAllCache(){
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbz3LgHl80x5jiZrabVYNFSbRnwSE3O_gYJrtvEtBOezzk7uPUTNWgsfPMBOedO31ioDmA/exec";
+    const LIFF_ID = "2009006702-0vzXPgJs";
+    const APP_VERSION = "4.3.0";
+    async function callGAS(funcName, params) {
+      const payload = encodeURIComponent(JSON.stringify({ func: funcName, params: params || [] }));
+      const res = await fetch(GAS_URL + "?payload=" + payload, { redirect: "follow", method: "GET" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const text = await res.text();
+      try { return JSON.parse(text); } catch(e) { throw new Error("JSONparse: " + text.substring(0, 80)); }
+    }
+    let CURRENT_UID="", MY_NUM="", MY_NAME="", GROUP_ID="";
+    let FAMILY=[], addBusy=false, searchConfirmCallback=null, isNewPatientMedicalCert=false;
+    let batchRegistrationData=[], batchTotalCount=0, batchCurrentIndex=0;
+    let batchLastSurname="", batchLastPhone="", editingIndex=-1;
+    const CACHE_KEY_V2="tdl_patient_cache_v2";
+    function saveAllCache(){try{localStorage.setItem(CACHE_KEY_V2,JSON.stringify({savedAt:Date.now(),myNum:MY_NUM,myName:MY_NAME,groupId:GROUP_ID,family:FAMILY}));}catch(e){}}
+    function loadAllCache(){try{const r=localStorage.getItem(CACHE_KEY_V2);if(!r)return null;const o=JSON.parse(r);return(o&&o.myNum)?o:null;}catch(e){return null;}}
+    function restoreFromCacheIfAvailable(){const c=loadAllCache();if(!c)return false;MY_NUM=String(c.myNum||"");MY_NAME=String(c.myName||"");GROUP_ID=String(c.groupId||"");FAMILY=Array.isArray(c.family)?c.family:[];_showViewArea(MY_NUM,MY_NAME);renderFamily();if(GROUP_ID){const g=document.getElementById("groupQr");if(g)g.src=qrUrl(buildGroupPayload(GROUP_ID));}return true;}
+    window.addEventListener("load",async function(){
+      ["birthInput","addFamBirth","batchBirthday","editBirthday"].forEach(id=>enableDatePlaceholder(id,"生年月日（YYYY-MM-DD）"));
+      if(localStorage.getItem("app_version")!==APP_VERSION){localStorage.setItem("app_version",APP_VERSION);if("caches"in window)caches.keys().then(ns=>ns.forEach(n=>caches.delete(n)));}
+      const cacheShown=restoreFromCacheIfAvailable();
+      if(!cacheShown)showSpin("よみこみ中...");
+      let liffTimedOut=false;
+      const liffTimeout=setTimeout(()=>{liffTimedOut=true;hideSpin();if(!cacheShown)document.getElementById("setupArea").style.display="block";},12000);
       try{
-        localStorage.setItem(CACHE_KEY_V2, JSON.stringify({savedAt:Date.now(),myNum:MY_NUM,myName:MY_NAME,groupId:GROUP_ID,family:FAMILY}));
-        localStorage.setItem('myPatientNum',  MY_NUM);
-        localStorage.setItem('myPatientName', MY_NAME);
-      }catch(e){}
-    }
-    function loadAllCache(){
-      try{
-        const raw=localStorage.getItem(CACHE_KEY_V2); if(!raw) return null;
-        const obj=JSON.parse(raw); if(!obj||!obj.myNum) return null;
-        return obj;
-      }catch(e){return null;}
-    }
-    /** キャッシュから画面を仮表示する（通信完了まで空白防止） */
-    function restoreFromCacheIfAvailable(){
-      const c=loadAllCache(); if(!c) return false;
-      MY_NUM=String(c.myNum||""); MY_NAME=String(c.myName||"");
-      GROUP_ID=String(c.groupId||""); FAMILY=Array.isArray(c.family)?c.family:[];
-      _showViewArea(MY_NUM,MY_NAME);
-      renderFamily();
-      if(GROUP_ID){const g=document.getElementById("groupQr");if(g)g.src=qrUrl(buildGroupPayload(GROUP_ID));}
-      return true;
-    }
-    // 旧関数名互換
-    function saveFamilyCache()       {saveAllCache();}
-    function loadFamilyCache()       {return loadAllCache();}
-    function applyFamilyCacheIfAny() {return restoreFromCacheIfAvailable();}
-
-// ================================================================
-    //  ★v3.4.0 起動処理
-    //  1. localStorageキャッシュがあれば仮表示（空白防止）
-    //  2. liff.init() でLINE userIdを取得（タイムアウト12秒）
-    //     成功 → サーバーのA列から患者番号を取得して正式表示
-    //     失敗/タイムアウト → キャッシュ表示継続 or 登録フォーム表示
-    // ================================================================
-    window.addEventListener('load', function(){
-      enableDatePlaceholder("birthInput",   "生年月日（YYYY-MM-DD）");
-      enableDatePlaceholder("addFamBirth",  "生年月日（YYYY-MM-DD）");
-      enableDatePlaceholder("newBirthday",  "生年月日（YYYY-MM-DD）");
-      enableDatePlaceholder("batchBirthday","生年月日（YYYY-MM-DD）");
-      enableDatePlaceholder("editBirthday", "生年月日（YYYY-MM-DD）");
-
-      // まずキャッシュで仮表示
-      const cacheShown = restoreFromCacheIfAvailable();
-      if(!cacheShown) showSpin("よみこみ中...");
-
-      // LIFF未設定なら即座にフォールバック
-      if(!LIFF_ID_VAL || LIFF_ID_VAL === ""){
-        hideSpin();
-        if(!cacheShown) document.getElementById('setupArea').style.display = 'block';
-        return;
-      }
-
-      // タイムアウト12秒
-      const liffTimeout = setTimeout(function(){
-        hideSpin();
-        if(!cacheShown) document.getElementById('setupArea').style.display = 'block';
-      }, 12000);
-
-      liff.init({ liffId: LIFF_ID_VAL })
-        .then(function(){
-          clearTimeout(liffTimeout);
-          return getLineUserId();
-        })
-        .then(function(uid){
-          CURRENT_UID = uid || "";
-          if(!CURRENT_UID){
-            hideSpin();
-            if(!cacheShown) document.getElementById('setupArea').style.display = 'block';
-            return;
-          }
-          // サーバーのA列からuidで患者番号を取得
-          google.script.run
-            .withSuccessHandler(function(res){
-              hideSpin();
-              if(res && res.success && res.num){
-                MY_NUM   = String(res.num   || "");
-                MY_NAME  = String(res.name  || "");
-                GROUP_ID = String(res.groupId || "");
-                FAMILY   = Array.isArray(res.family) ? res.family : [];
-                updateView(MY_NUM, MY_NAME);
-                if(res.numChanged && res.message){
-                  setTimeout(function(){ alert(res.message); }, 500);
-                }
-              } else {
-                if(cacheShown){
-                  if(MY_NUM) bindPatientToServer(MY_NUM);
-                } else {
-                  document.getElementById('setupArea').style.display = 'block';
-                }
-              }
-            })
-            .withFailureHandler(function(){
-              hideSpin();
-              if(!cacheShown) document.getElementById('setupArea').style.display = 'block';
-            })
-            .getPatientByUid(CURRENT_UID);
-        })
-        .catch(function(){
-          clearTimeout(liffTimeout);
+        await liff.init({liffId:LIFF_ID});
+        if(liffTimedOut)return;
+        if(!liff.isLoggedIn()){liff.login();return;}
+        const profile=await liff.getProfile();
+        clearTimeout(liffTimeout);
+        CURRENT_UID=String(profile.userId||"").trim();
+        if(!CURRENT_UID){hideSpin();if(!cacheShown)document.getElementById("setupArea").style.display="block";return;}
+        try{
+          const res=await callGAS("getPatientByUid",[CURRENT_UID]);
           hideSpin();
-          if(!cacheShown) document.getElementById('setupArea').style.display = 'block';
-        });
+          if(res&&res.success&&res.num){MY_NUM=String(res.num);MY_NAME=String(res.name||"");GROUP_ID=String(res.groupId||"");FAMILY=Array.isArray(res.family)?res.family:[];updateView(MY_NUM,MY_NAME);if(res.numChanged&&res.message)setTimeout(()=>alert(res.message),500);}
+          else{if(cacheShown&&MY_NUM){await bindPatientToServer(MY_NUM);refreshFamilyBackground();}else{document.getElementById("setupArea").style.display="block";}}
+        }catch(apiErr){hideSpin();if(!cacheShown)document.getElementById("setupArea").style.display="block";}
+      }catch(liffErr){clearTimeout(liffTimeout);hideSpin();if(!cacheShown)document.getElementById("setupArea").style.display="block";}
     });
-
-    /**
-     * LINE userIdを取得する（複数手段でフォールバック）
-     * Promiseを返す
-     */
-    function getLineUserId(){
-      return new Promise(function(resolve){
-        try{
-          if(liff.getContext){
-            const ctx = liff.getContext();
-            if(ctx && ctx.userId){ resolve(ctx.userId); return; }
-          }
-          if(liff.getDecodedIDToken){
-            try{ const t=liff.getDecodedIDToken(); if(t&&t.sub){ resolve(t.sub); return; } }catch(e2){}
-          }
-          if(liff.isLoggedIn && liff.isLoggedIn() && liff.getProfile){
-            liff.getProfile()
-              .then(function(p){ resolve(p && p.userId ? p.userId : ""); })
-              .catch(function(){ resolve(""); });
-            return;
-          }
-          resolve("");
-        }catch(e){ resolve(""); }
-      });
-    }
-
-    /**
-     * uid ↔ 患者番号 をサーバーのA列に保存
-     * CURRENT_UIDが空の場合は再取得を試みる
-     */
-    function bindPatientToServer(num){
-      if(!num) return;
-      if(CURRENT_UID){
-        // uidが取得済みなら即書き込み
-        _doBindPatient(CURRENT_UID, num);
-      } else {
-        // uidが未取得の場合、liffが初期化済みならuid再取得を試みる
-        try{
-          if(typeof liff !== 'undefined' && liff.getContext){
-            const ctx = liff.getContext();
-            if(ctx && ctx.userId){
-              CURRENT_UID = ctx.userId;
-              _doBindPatient(CURRENT_UID, num);
-              return;
-            }
-          }
-          if(typeof liff !== 'undefined' && liff.getDecodedIDToken){
-            try{
-              const t = liff.getDecodedIDToken();
-              if(t && t.sub){
-                CURRENT_UID = t.sub;
-                _doBindPatient(CURRENT_UID, num);
-                return;
-              }
-            }catch(e2){}
-          }
-          if(typeof liff !== 'undefined' && liff.isLoggedIn && liff.isLoggedIn() && liff.getProfile){
-            liff.getProfile().then(function(p){
-              if(p && p.userId){
-                CURRENT_UID = p.userId;
-                _doBindPatient(CURRENT_UID, num);
-              }
-            }).catch(function(){});
-            return;
-          }
-        }catch(e){}
-        // liff未初期化の場合はliff.initから再試行
-        if(typeof liff !== 'undefined' && LIFF_ID_VAL){
-          liff.init({ liffId: LIFF_ID_VAL }).then(function(){
-            return getLineUserId();
-          }).then(function(uid){
-            if(uid){
-              CURRENT_UID = uid;
-              _doBindPatient(CURRENT_UID, num);
-            }
-          }).catch(function(){});
-        }
-      }
-    }
-
-    function _doBindPatient(uid, num){
-      if(!uid || !num) return;
-      try{
-        google.script.run
-          .withSuccessHandler(function(){})
-          .withFailureHandler(function(){})
-          .bindPatient(uid, String(num));
-      }catch(e){}
-    }
-
-    // ================================================================
-    //  共通ユーティリティ
-    // ================================================================
-    function showSearchConfirm(message,callback,options={}){
-      document.getElementById('searchConfirmTitle').textContent    =options.title      ||'確認';
-      document.getElementById('searchConfirmMessage').textContent  =message;
-      document.getElementById('searchConfirmOkBtn').textContent    =options.okLabel    ||'OK';
-      document.getElementById('searchConfirmCancelBtn').textContent=options.cancelLabel||'キャンセル';
-      document.getElementById('searchConfirmModal').style.display  ='flex';
-      searchConfirmCallback=callback;
-    }
-    function closeSearchConfirm(confirmed){
-      document.getElementById('searchConfirmModal').style.display='none';
-      if(searchConfirmCallback){searchConfirmCallback(confirmed);searchConfirmCallback=null;}
-    }
-
-    let isNewPatientMedicalCert=false;
-    let batchRegistrationData=[],batchTotalCount=0,batchCurrentIndex=0;
-    let batchLastSurname="",batchLastPhone="",editingIndex=-1;
-
-    function buildPersonPayload(num){return "TDL|P|"+String(num);}
-    function buildGroupPayload(gid){return "TDL|G|"+String(gid);}
-    function qrUrl(payload){return "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data="+encodeURIComponent(payload);}
-
-    function showSpin(msg){
-      const tx=document.getElementById("spinText");if(tx)tx.textContent=msg||"まほうを かけてるよ...";
-      document.getElementById("spin").style.display="flex";
-    }
+    async function bindPatientToServer(num){if(!num||!CURRENT_UID)return;try{await callGAS("bindPatient",[CURRENT_UID,String(num)]);}catch(e){}}
+    function showSearchConfirm(message,callback,options={}){document.getElementById("searchConfirmTitle").textContent=options.title||"確認";document.getElementById("searchConfirmMessage").textContent=message;document.getElementById("searchConfirmOkBtn").textContent=options.okLabel||"OK";document.getElementById("searchConfirmCancelBtn").textContent=options.cancelLabel||"キャンセル";document.getElementById("searchConfirmModal").style.display="flex";searchConfirmCallback=callback;}
+    function closeSearchConfirm(confirmed){document.getElementById("searchConfirmModal").style.display="none";if(searchConfirmCallback){searchConfirmCallback(confirmed);searchConfirmCallback=null;}}
+    function buildPersonPayload(num){return"TDL|P|"+String(num);}
+    function buildGroupPayload(gid){return"TDL|G|"+String(gid);}
+    function qrUrl(p){return"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data="+encodeURIComponent(p);}
+    function showSpin(msg){const t=document.getElementById("spinText");if(t)t.textContent=msg||"まほうを かけてるよ...";document.getElementById("spin").style.display="flex";}
     function hideSpin(){document.getElementById("spin").style.display="none";}
-
     let uiWatchdog=null;
-    function startUiWatchdog(ms){
-      stopUiWatchdog();
-      uiWatchdog=setTimeout(()=>{
-        hideSpin();setMainButtonsDisabled(false);addBusy=false;
-        safeEnableButton("regBtn",true);safeEnableButton("searchBtn",true);
-        alert("通信が不安定です。もう一度お試しください。");
-      },ms||7000);
-    }
+    function startUiWatchdog(ms){stopUiWatchdog();uiWatchdog=setTimeout(()=>{hideSpin();setMainButtonsDisabled(false);addBusy=false;safeEnableButton("regBtn",true);safeEnableButton("searchBtn",true);alert("通信が不安定です。もう一度お試しください。");},ms||15000);}
     function stopUiWatchdog(){if(uiWatchdog){clearTimeout(uiWatchdog);uiWatchdog=null;}}
+    function safeEnableButton(id,enable){const el=document.getElementById(id);if(!el)return;el.disabled=!enable;el.style.opacity=enable?"1":"0.5";}
+    function setMainButtonsDisabled(disabled){["regBtn","searchBtn","addFamBtn","batchNextBtn","confirmRegisterBtn"].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!!disabled;});}
+    function switchMode(m){document.getElementById("inputModeArea").style.display=m==="input"?"block":"none";document.getElementById("searchModeArea").style.display=m==="search"?"block":"none";document.getElementById("newPatientCountArea").style.display=(m==="newpatient"||m==="newpatientcount")?"block":"none";document.getElementById("newPatientBatchArea").style.display=m==="batch"?"block":"none";document.getElementById("newPatientConfirmArea").style.display=m==="confirm"?"block":"none";document.getElementById("newPatientEditArea").style.display=m==="edit"?"block":"none";if(m==="newpatient"){document.getElementById("inputModeArea").style.display="none";}}
+    function _showViewArea(n,a){document.getElementById("setupArea").style.display="none";document.getElementById("viewArea").style.display="block";document.getElementById("patientNameDisplay").innerText=(a||"")+" 様";document.getElementById("patientNumDisplay").innerText="No. "+n;document.getElementById("qrImage").src=qrUrl(buildPersonPayload(n));}
+    function updateView(n,a){MY_NUM=String(n||"");MY_NAME=String(a||"");_showViewArea(MY_NUM,MY_NAME);renderFamily();if(GROUP_ID){const g=document.getElementById("groupQr");if(g)g.src=qrUrl(buildGroupPayload(GROUP_ID));}saveAllCache();}
+    async function refreshFamilyBackground(){if(!MY_NUM)return;try{const res=await callGAS("getFamilyByPatientNum",[MY_NUM]);if(!res||!res.success)return;FAMILY=res.family||[];GROUP_ID=String(res.groupId||"");renderFamily();if(GROUP_ID){const g=document.getElementById("groupQr");if(g)g.src=qrUrl(buildGroupPayload(GROUP_ID));}saveAllCache();}catch(e){}}
+    function calculateAge(birthday){if(!birthday)return 999;const today=new Date(),birth=new Date(birthday);let age=today.getFullYear()-birth.getFullYear();const m=today.getMonth()-birth.getMonth();if(m<0||(m===0&&today.getDate()<birth.getDate()))age--;return age;}
+    function promptMedicalCertIfUnder18(birthday,patientNum,patientName){if(!birthday)return;const age=calculateAge(birthday);if(age>=18)return;setTimeout(()=>{if(age<6){showSearchConfirm(patientName+" 様は"+age+"歳です。
 
-    function safeEnableButton(id,enable){
-      const el=document.getElementById(id);if(!el)return;
-      el.disabled=!enable;el.style.opacity=enable?"1":"0.5";
-    }
+医療証の登録・更新をしますか？",c=>{if(c){isNewPatientMedicalCert=true;openIndexMedicalCertForNewPatient();}},{title:"医療証の確認",okLabel:"撕影する",cancelLabel:"あとで"});}else{showSearchConfirm(patientName+" 様は"+age+"歳です。
 
-    function switchMode(m){
-      document.getElementById('inputModeArea').style.display        =m==='input'          ?'block':'none';
-      document.getElementById('searchModeArea').style.display       =m==='search'         ?'block':'none';
-      document.getElementById('newPatientModeArea').style.display   =m==='newpatient'     ?'block':'none';
-      document.getElementById('newPatientCountArea').style.display  =m==='newpatientcount'?'block':'none';
-      document.getElementById('newPatientBatchArea').style.display  =m==='batch'          ?'block':'none';
-      document.getElementById('newPatientConfirmArea').style.display=m==='confirm'        ?'block':'none';
-      document.getElementById('newPatientEditArea').style.display   =m==='edit'           ?'block':'none';
-      if(m==='newpatient'){
-        document.getElementById('newPatientModeArea').style.display ='none';
-        document.getElementById('newPatientCountArea').style.display='block';
-      }
-    }
+医療証をお持ちの場合は今すぐ撕影できます。",c=>{if(c){openIndexMedicalCert();}},{title:"医療証の確認",okLabel:"撕影する",cancelLabel:"あとで"});}},800);}
+    function enableDatePlaceholder(id,ph){const el=document.getElementById(id);if(!el)return;const toText=()=>{if(!el.value){try{el.type="text";}catch(e){}el.placeholder=ph||"YYYY-MM-DD";el.classList.add("date-hint");}};const toDate=()=>{try{el.type="date";}catch(e){}el.classList.remove("date-hint");el.placeholder="";};toText();el.addEventListener("focus",toDate);el.addEventListener("blur",toText);el.addEventListener("change",()=>{if(el.value)el.classList.remove("date-hint");});}
+    function renderFamily(){const box=document.getElementById("familyList");if(!box)return;box.innerHTML="";if(!FAMILY||FAMILY.length===0){box.innerHTML='<div class="mini">家族が登録されていま㍹</div>';return;}FAMILY.forEach(m=>{const row=document.createElement("div");row.className="fam-item";const name=document.createElement("div");name.className="fam-name";name.textContent=String(m.name||"");const num=document.createElement("div");num.className="fam-num";num.textContent="No."+String(m.num||"");row.appendChild(name);row.appendChild(num);box.appendChild(row);const q=document.createElement("div");q.className="fam-qr-wrap";q.innerHTML='<div class="fam-qr-mini"><img alt="個別QR" src="'+qrUrl(buildPersonPayload(m.num))+'"></div>';box.appendChild(q);});}
+    async function validateAndRegister(){const n=String(document.getElementById("manualInput").value||"").trim();if(!n){alert("診察券番号をいれてね");return;}safeEnableButton("regBtn",false);try{const cc=await callGAS("checkNumberChanged",[n]);if(cc&&cc.changed){showSearchConfirm(cc.message+"
 
-    function _showViewArea(n,a){
-      document.getElementById('setupArea').style.display='none';
-      document.getElementById('viewArea').style.display ='block';
-      document.getElementById('patientNameDisplay').innerText=(a||"")+" 様";
-      document.getElementById('patientNumDisplay').innerText ="No. "+n;
-      document.getElementById('qrImage').src=qrUrl(buildPersonPayload(n));
-    }
+新しい番号で登録しますか？",c=>{if(c){document.getElementById("manualInput").value=cc.newNum;continueValidateAndRegister(String(cc.newNum));}else safeEnableButton("regBtn",true);},{title:"番号変更のお知らせ",okLabel:"新番号で登録",cancelLabel:"キャンセル"});}else{continueValidateAndRegister(n);}}catch(e){continueValidateAndRegister(n);}}
+    async function continueValidateAndRegister(n){setMainButtonsDisabled(true);showSpin("まほうで かくにん中...");document.getElementById("loadingMsg1").style.display="block";startUiWatchdog(15000);try{const res=await callGAS("checkPatientNumber",[n]);stopUiWatchdog();document.getElementById("loadingMsg1").style.display="none";hideSpin();setMainButtonsDisabled(false);safeEnableButton("regBtn",true);if(res&&res.success){showSearchConfirm(res.name+" 様で登録する？",async c=>{if(c){MY_NUM=String(n);MY_NAME=String(res.name||"");GROUP_ID="";FAMILY=[];updateView(MY_NUM,MY_NAME);await bindPatientToServer(MY_NUM);refreshFamilyBackground();promptMedicalCertIfUnder18(res.birthday,MY_NUM,MY_NAME);}else safeEnableButton("regBtn",true);},{title:"検索結果",okLabel:"登録する",cancelLabel:"キャンセル"});}else{alert((res&&res.message)||"不明な応答です。もう一度お試しください。");}}catch(e){stopUiWatchdog();document.getElementById("loadingMsg1").style.display="none";hideSpin();setMainButtonsDisabled(false);safeEnableButton("regBtn",true);alert("通信エラー。もう一度お試しください。");}}
+    async function executeSearch(){const searchBtn=document.getElementById("searchBtn");if(searchBtn.disabled)return;const k=document.getElementById("kanaInput").value,b=document.getElementById("birthInput").value;if(!k||!b){alert("にゅうりょくしてね");return;}searchBtn.disabled=true;searchBtn.style.opacity="0.5";setMainButtonsDisabled(true);showSpin("さがしているよ...");document.getElementById("loadingMsg2").style.display="block";startUiWatchdog(15000);try{const res=await callGAS("searchPatientNumber",[k,b]);stopUiWatchdog();document.getElementById("loadingMsg2").style.display="none";hideSpin();setMainButtonsDisabled(false);safeEnableButton("searchBtn",true);if(res&&res.success){showSearchConfirm(res.name+" 様でみつかったよ！登録する？",async c=>{if(c){MY_NUM=String(res.num);MY_NAME=String(res.name||"");GROUP_ID="";FAMILY=[];updateView(MY_NUM,MY_NAME);await bindPatientToServer(MY_NUM);refreshFamilyBackground();promptMedicalCertIfUnder18(res.birthday,MY_NUM,MY_NAME);}else safeEnableButton("searchBtn",true);},{title:"検索結果",okLabel:"登録する",cancelLabel:"キャンセル"});}else{alert((res&&res.message)||"見つかりませんでした。");}}catch(e){stopUiWatchdog();document.getElementById("loadingMsg2").style.display="none";hideSpin();setMainButtonsDisabled(false);safeEnableButton("searchBtn",true);alert("通信エラー。もう一度お試しください。");}}
+    async function searchAndConfirmFamily(){if(addBusy)return;if(!MY_NUM){alert("まず自分の診察券を登録してね");return;}const num=String(document.getElementById("addFamNum").value||"").trim();const kana=String(document.getElementById("addFamKana").value||"").trim();const birth=String(document.getElementById("addFamBirth").value||"").trim();if(!num&&(!kana||!birth)){alert("番号 または カナ＋生年月日を入力してね");return;}addBusy=true;setMainButtonsDisabled(true);showSpin("かぞくを さがしているよ...");startUiWatchdog(15000);try{const res=await callGAS("searchFamilyCandidate",[kana,birth,num]);stopUiWatchdog();hideSpin();if(!res||!res.success){alert(res&&res.message?res.message:"検索に失敗しました");addBusy=false;setMainButtonsDisabled(false);return;}if(String(res.num)===String(MY_NUM)){alert("自分自身は追加できません");addBusy=false;setMainButtonsDisabled(false);return;}showSearchConfirm("この方を家族として登録しますか？
 
-    function updateView(n,a){
-      MY_NUM=String(n||""); MY_NAME=String(a||"");
-      _showViewArea(MY_NUM,MY_NAME);
-      renderFamily();
-      if(GROUP_ID){const g=document.getElementById("groupQr");if(g)g.src=qrUrl(buildGroupPayload(GROUP_ID));}
-      saveAllCache();
-    }
-
-    function setMainButtonsDisabled(disabled){
-      ["regBtn","searchBtn","addFamBtn","newPatientBtn","batchNextBtn","confirmRegisterBtn"]
-        .forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!!disabled;});
-    }
-
-    function refreshFamilyBackground(){
-      const h=res=>{
-        if(!res||!res.success)return;
-        FAMILY=res.family||[]; GROUP_ID=String(res.groupId||"");
-        renderFamily();
-        if(GROUP_ID){const g=document.getElementById("groupQr");if(g)g.src=qrUrl(buildGroupPayload(GROUP_ID));}
-        saveAllCache();
-      };
-      try{
-        if(CURRENT_UID) google.script.run.withSuccessHandler(h).withFailureHandler(()=>{}).getMyFamily(CURRENT_UID);
-        else if(MY_NUM) google.script.run.withSuccessHandler(h).withFailureHandler(()=>{}).getFamilyByPatientNum(MY_NUM);
-      }catch(e){}
-    }
-    function refreshFamily(){refreshFamilyBackground();}
-
-    function promptMedicalCertIfUnder18(birthday,patientNum,patientName){
-      if(!birthday)return;
-      const age=calculateAge(birthday); if(age>=18)return;
-      setTimeout(()=>{
-        if(age<6){
-          showSearchConfirm(patientName+" 様は"+age+"歳です。\n\n医療証の登録・更新をしますか？\n\n※ 18歳未満の方（2026年6月より）は小児医療証の登録が必要です",
-            c=>{if(c){isNewPatientMedicalCert=true;openIndexMedicalCertForNewPatient();}},
-            {title:'医療証の確認',okLabel:'撮影する',cancelLabel:'あとで'});
-        } else {
-          showSearchConfirm(patientName+" 様は"+age+"歳です。\n\n医療証をお持ちの場合は今すぐ撮影・登録できます。\n撮影しますか？",
-            c=>{if(c){isNewPatientMedicalCert=false;openIndexMedicalCert();}},
-            {title:'医療証の確認',okLabel:'撮影する',cancelLabel:'あとで'});
-        }
-      },800);
-    }
-
-    function validateAndRegister(){
-      const n=String(document.getElementById('manualInput').value||"").trim();
-      if(!n)return alert("診察券番号をいれてね");
-      safeEnableButton("regBtn",false);
-      google.script.run
-        .withSuccessHandler(cc=>{
-          if(cc&&cc.changed){
-            showSearchConfirm(cc.message+'\n\n新しい番号で登録しますか？',c=>{
-              if(c){document.getElementById('manualInput').value=cc.newNum;continueValidateAndRegister(String(cc.newNum));}
-              else safeEnableButton("regBtn",true);
-            },{title:'番号変更のお知らせ',okLabel:'新番号で登録',cancelLabel:'キャンセル'});
-          } else continueValidateAndRegister(n);
-        })
-        .withFailureHandler(()=>continueValidateAndRegister(n))
-        .checkNumberChanged(n);
-    }
-
-    function continueValidateAndRegister(n){
-      const regBtn=document.getElementById('regBtn');
-      if(regBtn){regBtn.disabled=true;regBtn.style.opacity='0.5';}
-      requestAnimationFrame(()=>{
-        setMainButtonsDisabled(true);showSpin("まほうで かくにん中...");
-        document.getElementById('loadingMsg1').style.display='block';startUiWatchdog(9000);
-        google.script.run
-          .withSuccessHandler(res=>{
-            stopUiWatchdog();document.getElementById('loadingMsg1').style.display='none';hideSpin();
-            if(regBtn)regBtn.style.opacity='1';setMainButtonsDisabled(false);safeEnableButton("regBtn",true);
-            if(res&&res.success){
-              showSearchConfirm(res.name+" 様で登録する？",c=>{
-                if(c){
-                  MY_NUM=String(n);MY_NAME=String(res.name||"");GROUP_ID="";FAMILY=[];
-                  updateView(MY_NUM,MY_NAME);
-                  bindPatientToServer(MY_NUM); // ★v3.2.0
-                  refreshFamilyBackground();
-                  promptMedicalCertIfUnder18(res.birthday,MY_NUM,MY_NAME);
-                } else safeEnableButton("regBtn",true);
-              },{title:'検索結果',okLabel:'登録する',cancelLabel:'キャンセル'});
-            } else if(res&&!res.success) alert(res.message);
-            else alert("不明な応答です。もう一度お試しください。");
-          })
-          .withFailureHandler(()=>{
-            stopUiWatchdog();document.getElementById('loadingMsg1').style.display='none';hideSpin();
-            if(regBtn)regBtn.style.opacity='1';setMainButtonsDisabled(false);safeEnableButton("regBtn",true);
-            alert("通信エラー。もう一度お試しください。");
-          })
-          .checkPatientNumber(n);
-      });
-    }
-
-    function executeSearch(){
-      const searchBtn=document.getElementById('searchBtn');if(searchBtn.disabled)return;
-      const k=document.getElementById('kanaInput').value,b=document.getElementById('birthInput').value;
-      if(!k||!b){alert("にゅうりょくしてね");return;}
-      searchBtn.disabled=true;searchBtn.style.opacity='0.5';
-      requestAnimationFrame(()=>{
-        setMainButtonsDisabled(true);showSpin("さがしているよ...");
-        document.getElementById('loadingMsg2').style.display='block';startUiWatchdog(9000);
-        google.script.run.withSuccessHandler(res=>{
-          stopUiWatchdog();document.getElementById('loadingMsg2').style.display='none';hideSpin();
-          searchBtn.style.opacity='1';setMainButtonsDisabled(false);safeEnableButton("searchBtn",true);
-          if(res&&res.success){
-            showSearchConfirm(res.name+" 様でみつかったよ！登録する？",c=>{
-              if(c){
-                MY_NUM=String(res.num);MY_NAME=String(res.name||"");GROUP_ID="";FAMILY=[];
-                updateView(MY_NUM,MY_NAME);
-                bindPatientToServer(MY_NUM); // ★v3.2.0
-                refreshFamilyBackground();
-                promptMedicalCertIfUnder18(res.birthday,MY_NUM,MY_NAME);
-              } else safeEnableButton("searchBtn",true);
-            },{title:'検索結果',okLabel:'登録する',cancelLabel:'キャンセル'});
-          } else if(res&&!res.success) alert(res.message);
-        }).withFailureHandler(()=>{
-          stopUiWatchdog();document.getElementById('loadingMsg2').style.display='none';hideSpin();
-          searchBtn.style.opacity='1';setMainButtonsDisabled(false);safeEnableButton("searchBtn",true);
-          alert("通信エラー。もう一度お試しください。");
-        }).searchPatientNumber(k,b);
-      });
-    }
-
-    function registerNewPatient(){
-      const nameKanji=document.getElementById('newNameKanji').value.trim();
-      const kanaSei=document.getElementById('newKanaSei').value.trim();
-      const kanaMei=document.getElementById('newKanaMei').value.trim();
-      const birthday=document.getElementById('newBirthday').value;
-      const phone=document.getElementById('newPhone').value.trim();
-      if(!nameKanji||!kanaSei||!kanaMei||!birthday||!phone)return alert('すべての項目を入力してください');
-      showSearchConfirm(`以下の内容で登録しますか？\n\nお名前: ${nameKanji}\nカナ: ${kanaSei} ${kanaMei}\n生年月日: ${birthday}\n電話番号: ${phone}`,c=>{
-        if(!c)return;
-        setMainButtonsDisabled(true);showSpin("登録中...");startUiWatchdog(12000);
-        document.getElementById('loadingMsg3').style.display='block';
-        google.script.run.withSuccessHandler(res=>{
-          stopUiWatchdog();document.getElementById('loadingMsg3').style.display='none';hideSpin();setMainButtonsDisabled(false);
-          if(res&&res.success){
-            MY_NUM=String(res.num);MY_NAME=String(res.name||"");GROUP_ID="";FAMILY=[];
-            const age=calculateAge(birthday);
-            if(age<6){
-              alert(`登録完了！\n\n診察券番号: ${res.num}\nお名前: ${res.name}\n\nこの番号を控えてください。`);
-              updateView(MY_NUM,MY_NAME);
-              bindPatientToServer(MY_NUM); // ★v3.2.0
-              refreshFamilyBackground();
-              setTimeout(()=>{isNewPatientMedicalCert=true;openIndexMedicalCertForNewPatient();},500);
-            } else if(age<18){
-              showSearchConfirm(`登録完了！\n\n診察券番号: ${res.num}\nお名前: ${res.name}\n\nこの番号を控えてください。\n\n医療証をお持ちの場合は今すぐ撮影できます。\n撮影しますか？`,c2=>{
-                updateView(MY_NUM,MY_NAME);
-                bindPatientToServer(MY_NUM); // ★v3.2.0
-                refreshFamilyBackground();
-                if(c2)setTimeout(()=>{isNewPatientMedicalCert=true;openIndexMedicalCert();},500);
-              },{title:'登録完了',okLabel:'撮影する',cancelLabel:'あとで'});
-            } else {
-              alert(`登録完了！\n\n診察券番号: ${res.num}\nお名前: ${res.name}\n\nこの番号を控えてください。`);
-              updateView(MY_NUM,MY_NAME);
-              bindPatientToServer(MY_NUM); // ★v3.2.0
-              refreshFamilyBackground();
-            }
-          } else if(res&&res.alreadyExists){
-            alert(`既に登録されています\n\n診察券番号: ${res.num}\nお名前: ${res.name}`);
-            MY_NUM=String(res.num);MY_NAME=String(res.name||"");GROUP_ID="";FAMILY=[];
-            updateView(MY_NUM,MY_NAME);
-            bindPatientToServer(MY_NUM); // ★v3.2.0
-            refreshFamilyBackground();
-          } else alert(res.message||'登録に失敗しました');
-        }).withFailureHandler(()=>{
-          stopUiWatchdog();document.getElementById('loadingMsg3').style.display='none';hideSpin();setMainButtonsDisabled(false);
-          alert("通信エラー。もう一度お試しください。");
-        }).registerNewPatientDirect({nameKanji,kanaSei,kanaMei,birthday,phone});
-      },{title:'新患登録',okLabel:'登録する',cancelLabel:'キャンセル'});
-    }
-
-    function calculateAge(birthday){
-      if(!birthday)return 999;
-      const today=new Date(),birth=new Date(birthday);
-      let age=today.getFullYear()-birth.getFullYear();
-      const m=today.getMonth()-birth.getMonth();
-      if(m<0||(m===0&&today.getDate()<birth.getDate()))age--;
-      return age;
-    }
-    function checkIfUnder18(b){return calculateAge(b)<18;}
-
-    function startBatchRegistration(count){
-      batchTotalCount=count;batchCurrentIndex=0;batchRegistrationData=[];
-      batchLastSurname="";batchLastPhone="";
-      switchMode('batch');updateBatchProgress();clearBatchInputFields();
-    }
-    function updateBatchProgress(){
-      const p=document.getElementById('batchProgress');if(p)p.textContent=`${batchCurrentIndex+1}人目 / ${batchTotalCount}人`;
-      const b=document.getElementById('batchNextBtn');if(b)b.textContent=(batchCurrentIndex>=batchTotalCount-1)?'これで登録':'次の方を入力';
-    }
-    function clearBatchInputFields(){
-      document.getElementById('batchNameKanji').value='';
-      document.getElementById('batchKanaSei').value=batchLastSurname;
-      document.getElementById('batchKanaMei').value='';
-      document.getElementById('batchBirthday').value='';
-      enableDatePlaceholder("batchBirthday","生年月日（YYYY-MM-DD）");
-      document.getElementById('batchPhone').value=batchLastPhone;
-    }
-    function addToBatchAndNext(){
-      const nameKanji=document.getElementById('batchNameKanji').value.trim();
-      const kanaSei=document.getElementById('batchKanaSei').value.trim();
-      const kanaMei=document.getElementById('batchKanaMei').value.trim();
-      const birthday=document.getElementById('batchBirthday').value;
-      const phone=document.getElementById('batchPhone').value.trim();
-      if(!nameKanji||!kanaSei||!kanaMei||!birthday||!phone)return alert('すべての項目を入力してください');
-      batchRegistrationData.push({nameKanji,kanaSei,kanaMei,birthday,phone});
-      batchLastSurname=kanaSei;batchLastPhone=phone;batchCurrentIndex++;
-      if(batchCurrentIndex<batchTotalCount){updateBatchProgress();clearBatchInputFields();}
-      else showBatchConfirmation();
-    }
-    function showBatchConfirmation(){
-      switchMode('confirm');
-      const cl=document.getElementById('confirmList');cl.innerHTML='';
-      batchRegistrationData.forEach((pt,i)=>{
-        const age=calculateAge(pt.birthday),ageText=age<6?`${age}歳（6歳未満）`:`${age}歳`;
-        const item=document.createElement('div');
-        item.style.cssText=`margin-bottom:15px;padding-bottom:15px;border-bottom:${i<batchRegistrationData.length-1?'1px solid #ddd':'none'};`;
-        item.innerHTML=`<div style="font-weight:bold;font-size:1.1em;">${i+1}. ${pt.nameKanji}</div>
-          <div style="margin-top:5px;font-size:0.9em;">カナ: ${pt.kanaSei} ${pt.kanaMei}<br>生年月日: ${pt.birthday} (${ageText})<br>電話番号: ${pt.phone}</div>
-          <button class="edit-btn" onclick="editPatient(${i})">✏️ 修正</button>`;
-        cl.appendChild(item);
-      });
-    }
-    function editPatient(index){
-      if(index<0||index>=batchRegistrationData.length)return alert('エラーが発生しました');
-      editingIndex=index;const p=batchRegistrationData[index];switchMode('edit');
-      document.getElementById('editTargetName').textContent=p.nameKanji;
-      document.getElementById('editNameKanji').value=p.nameKanji;
-      document.getElementById('editKanaSei').value=p.kanaSei;
-      document.getElementById('editKanaMei').value=p.kanaMei;
-      document.getElementById('editBirthday').value=p.birthday;
-      document.getElementById('editPhone').value=p.phone;
-    }
-    function saveEdit(){
-      if(editingIndex<0||editingIndex>=batchRegistrationData.length)return alert('エラーが発生しました');
-      const nameKanji=document.getElementById('editNameKanji').value.trim();
-      const kanaSei=document.getElementById('editKanaSei').value.trim();
-      const kanaMei=document.getElementById('editKanaMei').value.trim();
-      const birthday=document.getElementById('editBirthday').value;
-      const phone=document.getElementById('editPhone').value.trim();
-      if(!nameKanji||!kanaSei||!kanaMei||!birthday||!phone)return alert('すべての項目を入力してください');
-      batchRegistrationData[editingIndex]={nameKanji,kanaSei,kanaMei,birthday,phone};
-      editingIndex=-1;showBatchConfirmation();
-    }
+"+res.name+" 様（No."+res.num+"）",async ok=>{if(!ok){addBusy=false;setMainButtonsDisabled(false);return;}showSpin("かぞくを とうろく中...");startUiWatchdog(15000);try{const r2=await callGAS("addFamilyMemberByNums",[MY_NUM,String(res.num)]);stopUiWatchdog();hideSpin();if(!r2||!r2.success){alert(r2&&r2.message?r2.message:"家族登録に失敗しました");addBusy=false;setMainButtonsDisabled(false);return;}FAMILY=r2.family||[];GROUP_ID=String(r2.groupId||GROUP_ID||"");renderFamily();if(GROUP_ID){const g=document.getElementById("groupQr");if(g)g.src=qrUrl(buildGroupPayload(GROUP_ID));}document.getElementById("addFamNum").value="";document.getElementById("addFamKana").value="";document.getElementById("addFamBirth").value="";saveAllCache();alert("家族を追加しました");addBusy=false;setMainButtonsDisabled(false);}catch(e2){stopUiWatchdog();hideSpin();alert("通信エラー。もう一度お試しください。");addBusy=false;setMainButtonsDisabled(false);}},{title:"家族追加",okLabel:"追加する",cancelLabel:"キャンセル"});}catch(e){stopUiWatchdog();hideSpin();alert("通信エラー。もう一度お試しください。");addBusy=false;setMainButtonsDisabled(false);}}
+    function startBatchRegistration(count){batchTotalCount=count;batchCurrentIndex=0;batchRegistrationData=[];batchLastSurname="";batchLastPhone="";switchMode("batch");updateBatchProgress();clearBatchInputFields();}
+    function updateBatchProgress(){const p=document.getElementById("batchProgress");if(p)p.textContent=`${batchCurrentIndex+1}人目 / ${batchTotalCount}人`;const b=document.getElementById("batchNextBtn");if(b)b.textContent=(batchCurrentIndex>=batchTotalCount-1)?"これで登録":"次の方を入力";}
+    function clearBatchInputFields(){document.getElementById("batchNameKanji").value="";document.getElementById("batchKanaSei").value=batchLastSurname;document.getElementById("batchKanaMei").value="";document.getElementById("batchBirthday").value="";enableDatePlaceholder("batchBirthday","生年月日（YYYY-MM-DD）");document.getElementById("batchPhone").value=batchLastPhone;}
+    function addToBatchAndNext(){const nameKanji=document.getElementById("batchNameKanji").value.trim(),kanaSei=document.getElementById("batchKanaSei").value.trim(),kanaMei=document.getElementById("batchKanaMei").value.trim(),birthday=document.getElementById("batchBirthday").value,phone=document.getElementById("batchPhone").value.trim();if(!nameKanji||!kanaSei||!kanaMei||!birthday||!phone){alert("すべての項目を入力してください");return;}batchRegistrationData.push({nameKanji,kanaSei,kanaMei,birthday,phone});batchLastSurname=kanaSei;batchLastPhone=phone;batchCurrentIndex++;if(batchCurrentIndex<batchTotalCount){updateBatchProgress();clearBatchInputFields();}else showBatchConfirmation();}
+    function showBatchConfirmation(){switchMode("confirm");const cl=document.getElementById("confirmList");cl.innerHTML="";batchRegistrationData.forEach((pt,i)=>{const age=calculateAge(pt.birthday),ageText=age<6?`${age}歳（6歳未満）`:`${age}歳`;const item=document.createElement("div");item.style.cssText=`margin-bottom:15px;padding-bottom:15px;border-bottom:${i<batchRegistrationData.length-1?"1px solid #ddd":"none"};`;item.innerHTML=`<div style="font-weight:bold;font-size:1.1em;">${i+1}. ${pt.nameKanji}</div><div style="margin-top:5px;font-size:0.9em;">カナ: ${pt.kanaSei} ${pt.kanaMei}<br>生年月日: ${pt.birthday} (${ageText})<br>電話番号: ${pt.phone}</div><button class="edit-btn" onclick="editPatient(${i})">✏️ 修正</button>`;cl.appendChild(item);});}
+    function editPatient(index){if(index<0||index>=batchRegistrationData.length){alert("エラー");return;}editingIndex=index;const p=batchRegistrationData[index];switchMode("edit");document.getElementById("editTargetName").textContent=p.nameKanji;document.getElementById("editNameKanji").value=p.nameKanji;document.getElementById("editKanaSei").value=p.kanaSei;document.getElementById("editKanaMei").value=p.kanaMei;document.getElementById("editBirthday").value=p.birthday;document.getElementById("editPhone").value=p.phone;}
+    function saveEdit(){if(editingIndex<0||editingIndex>=batchRegistrationData.length){alert("エラー");return;}const nameKanji=document.getElementById("editNameKanji").value.trim(),kanaSei=document.getElementById("editKanaSei").value.trim(),kanaMei=document.getElementById("editKanaMei").value.trim(),birthday=document.getElementById("editBirthday").value,phone=document.getElementById("editPhone").value.trim();if(!nameKanji||!kanaSei||!kanaMei||!birthday||!phone){alert("すべての項目を入力してください");return;}batchRegistrationData[editingIndex]={nameKanji,kanaSei,kanaMei,birthday,phone};editingIndex=-1;showBatchConfirmation();}
     function cancelEdit(){editingIndex=-1;showBatchConfirmation();}
-    function backToBatchInput(){
-      if(batchRegistrationData.length>0){batchRegistrationData.pop();batchCurrentIndex--;}
-      switchMode('batch');updateBatchProgress();clearBatchInputFields();
-    }
-    function cancelBatchRegistration(){
-      showSearchConfirm('入力内容を破棄して最初に戻りますか？',c=>{
-        if(c){batchRegistrationData=[];batchCurrentIndex=0;batchTotalCount=0;switchMode('input');}
-      },{title:'確認',okLabel:'破棄する',cancelLabel:'キャンセル'});
-    }
-    function executeBatchRegistration(){
-      if(batchRegistrationData.length===0)return alert('登録データがありません');
-      setMainButtonsDisabled(true);showSpin("全員登録中...");startUiWatchdog(20000);
-      document.getElementById('loadingMsg4').style.display='block';
-      google.script.run.withSuccessHandler(results=>{
-        stopUiWatchdog();document.getElementById('loadingMsg4').style.display='none';hideSpin();setMainButtonsDisabled(false);
-        if(!results||results.length===0){alert('登録に失敗しました');return;}
-        const rp=results.filter(r=>r&&r.success);if(rp.length===0){alert('登録に失敗しました');return;}
-        const fp=rp[0];
-        MY_NUM=String(fp.num);MY_NAME=String(fp.name||"");
-        let msg=`${rp.length}人の登録が完了しました！\n\n`;
-        rp.forEach((p,i)=>{msg+=`${i+1}. ${p.name}（No.${p.num}）\n`;});
-        msg+='\nこれらの番号を控えてください。';alert(msg);
-        if(rp.length>1){GROUP_ID="G-"+String(fp.num);FAMILY=rp.map(p=>({num:String(p.num),name:String(p.name)}));}
-        else{GROUP_ID="";FAMILY=[];}
-        updateView(MY_NUM,MY_NAME);
-        bindPatientToServer(MY_NUM); // ★v3.2.0
-        if(rp.length===1)refreshFamilyBackground();
-        setTimeout(()=>processMedicalCertForBatchPatients(rp),1000);
-      }).withFailureHandler(()=>{
-        stopUiWatchdog();document.getElementById('loadingMsg4').style.display='none';hideSpin();setMainButtonsDisabled(false);
-        alert("通信エラー。もう一度お試しください。");
-      }).registerMultipleNewPatients(batchRegistrationData);
-    }
+    function backToBatchInput(){if(batchRegistrationData.length>0){batchRegistrationData.pop();batchCurrentIndex--;}switchMode("batch");updateBatchProgress();clearBatchInputFields();}
+    function cancelBatchRegistration(){showSearchConfirm("入力内容を破棄して最初に戻りますか？",c=>{if(c){batchRegistrationData=[];batchCurrentIndex=0;batchTotalCount=0;switchMode("input");}},{title:"確認",okLabel:"破棄する",cancelLabel:"キャンセル"});}
+    async function executeBatchRegistration(){if(batchRegistrationData.length===0){alert("登録データがありません");return;}setMainButtonsDisabled(true);showSpin("全員登録中...");startUiWatchdog(30000);document.getElementById("loadingMsg4").style.display="block";try{const results=await callGAS("registerMultipleNewPatients",[batchRegistrationData]);stopUiWatchdog();document.getElementById("loadingMsg4").style.display="none";hideSpin();setMainButtonsDisabled(false);if(!results||results.length===0){alert("登録に失敗しました");return;}const rp=results.filter(r=>r&&r.success);if(rp.length===0){alert("登録に失敗しました");return;}const fp=rp[0];MY_NUM=String(fp.num);MY_NAME=String(fp.name||"");let msg=`${rp.length}人の登録が完了しました！
 
-    function processMedicalCertForBatchPatients(rp){
-      const u18=rp.filter(p=>{const od=batchRegistrationData.find(d=>d.nameKanji===p.name);return od?calculateAge(od.birthday)<18:false;});
-      if(u18.length===0)return;
-      processMedicalCertSequentially(u18,0);
-    }
-    function processMedicalCertSequentially(patients,index){
-      if(index>=patients.length){
-        if(window.batchMedicalCertQueue){
-          MY_NUM=window.batchMedicalCertQueue.originalNum;
-          MY_NAME=window.batchMedicalCertQueue.originalName;
-          window.batchMedicalCertQueue=null;
-        }
-        const h2=document.querySelector('#index-medical-modal h2');
-        if(h2)h2.textContent='医療証の登録';
-        alert('医療証の登録がすべて完了しました！');
-        return;
-      }
-      const pt=patients[index];
-      const savedNum=MY_NUM,savedName=MY_NAME;
-      MY_NUM=String(pt.num);MY_NAME=String(pt.name);
-      window.batchMedicalCertQueue={patients,index,originalNum:savedNum,originalName:savedName};
-      const h2=document.querySelector('#index-medical-modal h2');
-      if(h2)h2.textContent=`${pt.name} 様（No.${pt.num}）の医療証`;
-      resetQuestionSteps();
-      document.getElementById('index-medcert-step0').style.display='block';
-      document.getElementById('index-medical-modal').style.display='flex';
-    }
-
-    function forceResetProcess(){
-      showSearchConfirm("登録を解除してやり直す？",c=>{
-        if(c){
-          // ★v3.2.0 サーバー側のuid紐付けも解除
-          if(CURRENT_UID){try{google.script.run.withSuccessHandler(()=>{}).withFailureHandler(()=>{}).unbindPatient(CURRENT_UID);}catch(e){}}
-          localStorage.removeItem('myPatientNum');localStorage.removeItem('myPatientName');
-          localStorage.removeItem(CACHE_KEY);localStorage.removeItem(CACHE_KEY_V2);
-          document.getElementById('manualInput').value="";document.getElementById('kanaInput').value="";document.getElementById('birthInput').value="";
-          document.getElementById('viewArea').style.display='none';document.getElementById('setupArea').style.display='block';
-          MY_NUM="";MY_NAME="";GROUP_ID="";FAMILY=[];renderFamily();
-          const g=document.getElementById("groupQr");if(g)g.src="";
-        }
-      },{title:'登録解除',okLabel:'解除する',cancelLabel:'キャンセル'});
-    }
-
-    function renderFamily(){
-      const box=document.getElementById("familyList");if(!box)return;box.innerHTML="";
-      if(!FAMILY||FAMILY.length===0){box.innerHTML=`<div class="mini">家族が登録されていません</div>`;return;}
-      FAMILY.forEach(m=>{
-        const row=document.createElement("div");row.className="fam-item";
-        const name=document.createElement("div");name.className="fam-name";name.textContent=String(m.name||"");
-        const num=document.createElement("div");num.className="fam-num";num.textContent="No."+String(m.num||"");
-        row.appendChild(name);row.appendChild(num);box.appendChild(row);
-        const q=document.createElement("div");q.className="fam-qr-wrap";
-        q.innerHTML=`<div class="fam-qr-mini"><img alt="個別QR" src="${qrUrl(buildPersonPayload(m.num))}"></div>`;
-        box.appendChild(q);
-      });
-    }
-
-    function searchAndConfirmFamily(){
-      if(addBusy)return;if(!MY_NUM)return alert("まず自分の診察券を登録してね");
-      const num=String(document.getElementById("addFamNum").value||"").trim();
-      const kana=String(document.getElementById("addFamKana").value||"").trim();
-      const birth=String(document.getElementById("addFamBirth").value||"").trim();
-      if(!num&&(!kana||!birth)){alert("番号 または カナ＋生年月日を入力してね");return;}
-      addBusy=true;setMainButtonsDisabled(true);showSpin("かぞくを さがしているよ...");startUiWatchdog(12000);
-      google.script.run.withSuccessHandler(res=>{
-        stopUiWatchdog();hideSpin();
-        if(!res||!res.success){alert(res&&res.message?res.message:"検索に失敗しました");addBusy=false;setMainButtonsDisabled(false);return;}
-        if(String(res.num)===String(MY_NUM)){alert("自分自身は追加できません");addBusy=false;setMainButtonsDisabled(false);return;}
-        showSearchConfirm("この方を家族として登録しますか？\n\n"+res.name+" 様（No."+res.num+"）",ok=>{
-          if(!ok){addBusy=false;setMainButtonsDisabled(false);return;}
-          showSpin("かぞくを とうろく中...");startUiWatchdog(12000);
-          google.script.run.withSuccessHandler(r2=>{
-            stopUiWatchdog();hideSpin();
-            if(!r2||!r2.success){alert(r2&&r2.message?r2.message:"家族登録に失敗しました");addBusy=false;setMainButtonsDisabled(false);return;}
-            FAMILY=r2.family||[];GROUP_ID=String(r2.groupId||GROUP_ID||"");renderFamily();
-            if(GROUP_ID){const g=document.getElementById("groupQr");if(g)g.src=qrUrl(buildGroupPayload(GROUP_ID));}
-            document.getElementById("addFamNum").value="";document.getElementById("addFamKana").value="";document.getElementById("addFamBirth").value="";
-            saveAllCache();alert("家族を追加しました");addBusy=false;setMainButtonsDisabled(false);
-          }).withFailureHandler(()=>{stopUiWatchdog();hideSpin();alert("通信エラー。もう一度お試しください。");addBusy=false;setMainButtonsDisabled(false);}).addFamilyMemberByNums(MY_NUM,String(res.num));
-        },{title:'家族追加',okLabel:'追加する',cancelLabel:'キャンセル'});
-      }).withFailureHandler(()=>{stopUiWatchdog();hideSpin();alert("通信エラー。もう一度お試しください。");addBusy=false;setMainButtonsDisabled(false);}).searchFamilyCandidate(kana,birth,num);
-    }
-
-    function enableDatePlaceholder(id,ph){
-      const el=document.getElementById(id);if(!el)return;
-      const toText=()=>{if(!el.value){try{el.type="text";}catch(e){}el.placeholder=ph||"YYYY-MM-DD";el.classList.add("date-hint");}};
-      const toDate=()=>{try{el.type="date";}catch(e){}el.classList.remove("date-hint");el.placeholder="";};
-      toText();
-      el.addEventListener("focus",toDate);el.addEventListener("blur",toText);
-      el.addEventListener("change",()=>{if(el.value)el.classList.remove("date-hint");});
-    }
-
-    // ================================================================
-    //  医療証撮影機能（v3.2.0 - 変更なし）
-    // ================================================================
+`;rp.forEach((p,i)=>{msg+=`${i+1}. ${p.name}（No.${p.num}）
+`;});msg+="
+これらの番号を控えてください。";alert(msg);GROUP_ID=rp.length>1?"G-"+String(fp.num):"";FAMILY=rp.length>1?rp.map(p=>({num:String(p.num),name:String(p.name)})):[];updateView(MY_NUM,MY_NAME);await bindPatientToServer(MY_NUM);if(rp.length===1)refreshFamilyBackground();setTimeout(()=>processMedicalCertForBatchPatients(rp),1000);}catch(e){stopUiWatchdog();document.getElementById("loadingMsg4").style.display="none";hideSpin();setMainButtonsDisabled(false);alert("通信エラー。もう一度お試しください。");}}
+    function processMedicalCertForBatchPatients(rp){const u18=rp.filter(p=>{const od=batchRegistrationData.find(d=>d.nameKanji===p.name);return od?calculateAge(od.birthday)<18:false;});if(u18.length===0)return;processMedicalCertSequentially(u18,0);}
+    function processMedicalCertSequentially(patients,index){if(index>=patients.length){if(window.batchMedicalCertQueue){MY_NUM=window.batchMedicalCertQueue.originalNum;MY_NAME=window.batchMedicalCertQueue.originalName;window.batchMedicalCertQueue=null;}const h2=document.querySelector("#index-medical-modal h2");if(h2)h2.textContent="医療証の登録";alert("医療証の登録がすべて完了しました！");return;}const pt=patients[index];const savedNum=MY_NUM,savedName=MY_NAME;MY_NUM=String(pt.num);MY_NAME=String(pt.name);window.batchMedicalCertQueue={patients,index,originalNum:savedNum,originalName:savedName};const h2=document.querySelector("#index-medical-modal h2");if(h2)h2.textContent=`${pt.name} 様（No.${pt.num}）の医療証`;resetQuestionSteps();document.getElementById("index-medcert-step0").style.display="block";document.getElementById("index-medical-modal").style.display="flex";}
+    async function forceResetProcess(){showSearchConfirm("登録を解除してやり直す？",async c=>{if(c){if(CURRENT_UID){try{await callGAS("unbindPatient",[CURRENT_UID]);}catch(e){}}localStorage.removeItem(CACHE_KEY_V2);document.getElementById("manualInput").value="";document.getElementById("kanaInput").value="";document.getElementById("birthInput").value="";document.getElementById("viewArea").style.display="none";document.getElementById("setupArea").style.display="block";MY_NUM="";MY_NAME="";GROUP_ID="";FAMILY=[];renderFamily();const g=document.getElementById("groupQr");if(g)g.src="";}},{title:"登録解除",okLabel:"解除する",cancelLabel:"キャンセル"});}
     let indexMedCertImage=null;
-
-    function resetQuestionSteps(){
-      document.getElementById('index-medcert-step0').style.display='none';
-      document.getElementById('index-medcert-step1').style.display='none';
-    }
-    function openCameraFullscreen(){document.getElementById('index-medical-modal').style.display='none';startIndexMedCertCamera();}
-    function closeCameraFullscreen(){stopIndexMedCertCamera();}
-    function openPreviewModal(imageSrc){
-      document.getElementById('index-medcert-preview').src=imageSrc;
-      document.getElementById('preview-modal').style.display='flex';
-    }
-    function closePreviewModal(){
-      document.getElementById('preview-modal').style.display='none';
-      document.getElementById('index-medcert-preview').src='';
-    }
-    function openIndexMedicalCert(){
-      if(!MY_NUM||!MY_NAME){alert("まず診察券を登録してください");return;}
-      indexMedCertImage=null;resetQuestionSteps();
-      if(isNewPatientMedicalCert){isNewPatientMedicalCert=false;openCameraFullscreen();}
-      else{document.getElementById('index-medcert-step1').style.display='block';document.getElementById('index-medical-modal').style.display='flex';}
-    }
-    function openIndexMedicalCertForNewPatient(){
-      if(!MY_NUM||!MY_NAME){alert("まず診察券を登録してください");return;}
-      indexMedCertImage=null;resetQuestionSteps();
-      document.getElementById('index-medcert-step0').style.display='block';
-      document.getElementById('index-medical-modal').style.display='flex';
-    }
-    function closeIndexMedicalCert(){
-      stopIndexMedCertCamera();
-      indexMedCertImage=null;isNewPatientMedicalCert=false;
-      resetQuestionSteps();closeCameraFullscreen();closePreviewModal();
-      document.getElementById('index-medical-modal').style.display='none';
-    }
-    function indexMedCertNewPatientYes(){openCameraFullscreen();}
-    function indexMedCertNewPatientNo(){
-      closeIndexMedicalCert();
-      if(window.batchMedicalCertQueue){afterIndexOcrFlowDone();}
-      else{alert("医療証がない場合は、後日窓口でご登録ください");}
-    }
-    function indexMedCertYes(){openCameraFullscreen();}
+    function resetQuestionSteps(){document.getElementById("index-medcert-step0").style.display="none";document.getElementById("index-medcert-step1").style.display="none";}
+    function openIndexMedicalCert(){if(!MY_NUM||!MY_NAME){alert("まず診察券を登録してください");return;}indexMedCertImage=null;resetQuestionSteps();document.getElementById("index-medcert-step1").style.display="block";document.getElementById("index-medical-modal").style.display="flex";}
+    function openIndexMedicalCertForNewPatient(){if(!MY_NUM||!MY_NAME){alert("まず診察券を登録してください");return;}indexMedCertImage=null;resetQuestionSteps();document.getElementById("index-medcert-step0").style.display="block";document.getElementById("index-medical-modal").style.display="flex";}
+    function closeIndexMedicalCert(){indexMedCertImage=null;isNewPatientMedicalCert=false;resetQuestionSteps();closePreviewModal();document.getElementById("index-medical-modal").style.display="none";}
+    function indexMedCertNewPatientNo(){closeIndexMedicalCert();if(window.batchMedicalCertQueue){afterIndexOcrFlowDone();}else{alert("医療証がない場合は、後日窓口でご登録ください");}}
     function indexMedCertNo(){alert("変更がない場合は登録不要です");closeIndexMedicalCert();}
-    function indexMedCertCancel(){closeCameraFullscreen();indexMedCertImage=null;}
-
-    function onYesLabelClick(type){
-      document.getElementById('index-medical-modal').style.display='none';
-      indexMedCertImage=null;
-      const input=document.getElementById('index-medcert-file-input');if(input)input.value='';
-    }
-    function onRetakeLabelClick(){
-      indexMedCertImage=null;closePreviewModal();
-      const input=document.getElementById('index-medcert-file-input');if(input)input.value='';
-    }
-    function showRetakeModal(){
-      const modal=document.getElementById('index-ocr-result-modal');if(modal)modal.style.display='none';
-      indexMedCertImage=null;
-      const input=document.getElementById('index-medcert-file-input');if(input)input.value='';
-      const doOpen=()=>{
-        resetQuestionSteps();
-        if(window.batchMedicalCertQueue){
-          const h2=document.querySelector('#index-medical-modal h2');
-          if(h2)h2.textContent=`${MY_NAME} 様（No.${MY_NUM}）の医療証`;
-          document.getElementById('index-medcert-step0').style.display='block';
-        } else {
-          document.getElementById('index-medcert-step1').style.display='block';
-        }
-        document.getElementById('index-medical-modal').style.display='flex';
-      };
+    function onYesLabelClick(){document.getElementById("index-medical-modal").style.display="none";indexMedCertImage=null;const input=document.getElementById("index-medcert-file-input");if(input)input.value="";}
+    function onRetakeLabelClick(){indexMedCertImage=null;closePreviewModal();const input=document.getElementById("index-medcert-file-input");if(input)input.value="";}
+    function openPreviewModal(src){document.getElementById("index-medcert-preview").src=src;document.getElementById("preview-modal").style.display="flex";}
+    function closePreviewModal(){document.getElementById("preview-modal").style.display="none";document.getElementById("index-medcert-preview").src="";}
+    function showRetakeModal(){const modal=document.getElementById("index-ocr-result-modal");if(modal)modal.style.display="none";indexMedCertImage=null;const input=document.getElementById("index-medcert-file-input");if(input)input.value="";resetQuestionSteps();if(window.batchMedicalCertQueue){const h2=document.querySelector("#index-medical-modal h2");if(h2)h2.textContent=`${MY_NAME} 様（No.${MY_NUM}）の医療証`;document.getElementById("index-medcert-step0").style.display="block";}else{document.getElementById("index-medcert-step1").style.display="block";}document.getElementById("index-medical-modal").style.display="flex";}
+    function onMedCertFileSelected(input){const file=input.files&&input.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){const dataUrl=e.target.result;if(!dataUrl||dataUrl.length<200){alert("画像の読み込みに失敗しました。");return;}indexMedCertImage=dataUrl;openPreviewModal(indexMedCertImage);};reader.onerror=function(){alert("画像読み込みエラー。");};reader.readAsDataURL(file);}
+    async function indexMedCertUpload(){
+      if(!indexMedCertImage){alert("画像がありません。");return;}
+      closePreviewModal();showSpin("画像を準備中...");
       try{
-        google.script.run
-          .withSuccessHandler(()=>{doOpen();})
-          .withFailureHandler(()=>{doOpen();})
-          .clearMedicalCertNumbers(MY_NUM);
-      }catch(e){doOpen();}
+        let imgData=indexMedCertImage;
+        if(imgData.indexOf("base64,")!==-1)imgData=imgData.split("base64,")[1];
+        const CHUNK_SIZE=50000;
+        const totalChunks=Math.ceil(imgData.length/CHUNK_SIZE);
+        const sessionId="sess_"+Date.now()+"_"+Math.random().toString(36).substr(2,9);
+        for(let i=0;i<totalChunks;i++){
+          showSpin("画像を送信中... ("+(i+1)+"/"+totalChunks+")");
+          const chunk=imgData.substring(i*CHUNK_SIZE,(i+1)*CHUNK_SIZE);
+          await callGAS("saveMedicalCertChunk",[sessionId,i,totalChunks,chunk,MY_NUM,MY_NAME]);
+        }
+        showSpin("AIで解析中...");
+        const result=await callGAS("saveMedicalCertFinalize",[sessionId,MY_NUM,MY_NAME]);
+        hideSpin();
+        showIndexOcrResultModal(result);
+      }catch(e){hideSpin();alert("保存エラー: "+e.message);}
     }
-    function startIndexMedCertCamera(){}
-    function stopIndexMedCertCamera(){}
-    function indexMedCertRetake(){indexMedCertImage=null;closePreviewModal();}
-
-    function onMedCertFileSelected(input){
-      const file=input.files&&input.files[0];if(!file)return;
-      const reader=new FileReader();
-      reader.onload=function(e){
-        const dataUrl=e.target.result;
-        if(!dataUrl||dataUrl.length<200){alert("画像の読み込みに失敗しました。もう一度お試しください。");return;}
-        indexMedCertImage=dataUrl;openPreviewModal(indexMedCertImage);
-      };
-      reader.onerror=function(){alert("画像の読み込み中にエラーが発生しました。もう一度お試しください。");};
-      reader.readAsDataURL(file);
-    }
-    function indexMedCertUpload(){
-      if(!indexMedCertImage){alert("画像がありません。もう一度撮影してください。");return;}
-      closePreviewModal();showSpin("画像を保存中...");
-      google.script.run
-        .withSuccessHandler(result=>{hideSpin();showIndexOcrResultModal(result);})
-        .withFailureHandler(err=>{hideSpin();alert("保存エラー: "+(err&&err.message?err.message:String(err)));})
-        .saveMedicalCertPhoto(MY_NUM,MY_NAME,indexMedCertImage);
-    }
-    function showIndexOcrResultModal(result){
-      try{document.getElementById('searchConfirmModal').style.display='none';document.getElementById('index-medical-modal').style.display='none';hideSpin();}catch(e){}
-      const modal=document.getElementById('index-ocr-result-modal');
-      const titleEl=document.getElementById('index-ocr-result-title');
-      const contEl=document.getElementById('index-ocr-result-content');
-      const leftBtn=document.getElementById('index-ocr-left-btn');
-      const rightBtn=document.getElementById('index-ocr-right-btn');
-      if(!modal||!titleEl||!contEl||!leftBtn||!rightBtn){alert("システムエラー：結果モーダルが見つかりません");return;}
-      if(!result){
-        titleEl.textContent="❌ エラー";titleEl.style.color="#FF6F00";
-        contEl.innerHTML=`<div style="font-weight:900;color:#FF6F00;">データの取得に失敗しました</div>`;
-        leftBtn.style.display="none";
-        rightBtn.textContent="閉じる";rightBtn.style.background="#999";
-        rightBtn.onclick=()=>{modal.style.display="none";afterIndexOcrFlowDone();};
-        modal.style.display="block";return;
-      }
-      if(result.needsRetry===true){
-        titleEl.textContent="⚠️ 再撮影が必要です";titleEl.style.color="#FF6F00";
-        contEl.innerHTML=`<div style="font-weight:900;color:#FF6F00;font-size:1.15em;margin-bottom:8px;">医療証として認識できませんでした</div>
-          <div style="color:#666;">${escapeHtml(result.message||"もう一度撮影してください")}</div>`;
-        leftBtn.style.display="flex";leftBtn.textContent="撮り直す";
-        leftBtn.style.background="#FF6F00";leftBtn.style.color="white";
-        leftBtn.onclick=()=>{showRetakeModal();};
-        rightBtn.style.display="none";
-        modal.style.display="block";return;
-      }
-      if(result.success===true){
-        titleEl.textContent="✅ 保存完了";titleEl.style.color="#4FC3F7";
-        const futan=result.futanNumber||"",jukyusha=result.jukyushaNumber||"";
-        let html=`<div style="font-weight:900;color:#4FC3F7;font-size:1.15em;margin-bottom:10px;">医療証を保存しました！</div>`;
-        if(futan||jukyusha){
-          html+=`<div style="margin-top:12px;padding-top:12px;border-top:2px solid #FFD54F;">
-            <div style="font-weight:900;margin-bottom:10px;">【AI解析結果】</div>
-            ${futan?`<div style="margin:6px 0;">負担者番号： <strong>${escapeHtml(futan)}</strong></div>`:""}
-            ${jukyusha?`<div style="margin:6px 0;">受給者番号： <strong>${escapeHtml(jukyusha)}</strong></div>`:""}
-            <div style="margin-top:10px;font-size:0.9em;color:#999;">※ 患者マスターに登録済み（表示確認用）</div></div>`;
-        } else html+=`<div style="color:#666;">番号が取得できませんでした（画像は保存済み）。</div>`;
-        contEl.innerHTML=html;
-        leftBtn.style.display="flex";leftBtn.textContent="撮り直す";
-        leftBtn.style.background="#ddd";leftBtn.style.color="#666";
-        leftBtn.onclick=()=>{showRetakeModal();};
-        rightBtn.style.display="";rightBtn.textContent="OK";rightBtn.style.background="#4FC3F7";
-        rightBtn.onclick=()=>{modal.style.display="none";afterIndexOcrFlowDone();};
-        modal.style.display="block";return;
-      }
-      titleEl.textContent="❌ エラー";titleEl.style.color="#FF6F00";
-      contEl.innerHTML=`<div style="font-weight:900;color:#FF6F00;">保存に失敗しました</div><div style="margin-top:8px;color:#666;">${escapeHtml(result.message||"不明なエラー")}</div>`;
-      leftBtn.style.display="none";
-      rightBtn.style.display="";rightBtn.textContent="閉じる";rightBtn.style.background="#999";
-      rightBtn.onclick=()=>{modal.style.display="none";afterIndexOcrFlowDone();};
-      modal.style.display="block";
-    }
-    function afterIndexOcrFlowDone(){
-      if(window.batchMedicalCertQueue){
-        const q=window.batchMedicalCertQueue;
-        window.batchMedicalCertQueue=null;
-        setTimeout(()=>processMedicalCertSequentially(q.patients,q.index+1),300);
-      }
-    }
-    function escapeHtml(s){
-      return String(s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
-    }
+    function showIndexOcrResultModal(result){try{document.getElementById("searchConfirmModal").style.display="none";document.getElementById("index-medical-modal").style.display="none";hideSpin();}catch(e){}const modal=document.getElementById("index-ocr-result-modal"),titleEl=document.getElementById("index-ocr-result-title"),contEl=document.getElementById("index-ocr-result-content"),leftBtn=document.getElementById("index-ocr-left-btn"),rightBtn=document.getElementById("index-ocr-right-btn");if(!modal||!titleEl||!contEl||!leftBtn||!rightBtn){alert("システムエラー");return;}if(!result){titleEl.textContent="❌ エラー";titleEl.style.color="#FF6F00";contEl.innerHTML='<div style="font-weight:900;color:#FF6F00;">データの取得に失敗しました</div>';leftBtn.style.display="none";rightBtn.textContent="閉じる";rightBtn.style.background="#999";rightBtn.onclick=()=>{modal.style.display="none";afterIndexOcrFlowDone();};modal.style.display="block";return;}if(result.needsRetry===true){titleEl.textContent="⚠️ 再撕影が必要です";titleEl.style.color="#FF6F00";contEl.innerHTML='<div style="font-weight:900;color:#FF6F00;">医療証として認識できませんでした</div><div style="color:#666;">'+escapeHtml(result.message||"もう一度撕影してください")+'</div>';leftBtn.style.display="flex";leftBtn.textContent="撕り直す";leftBtn.style.background="#FF6F00";leftBtn.style.color="white";leftBtn.onclick=()=>{showRetakeModal();};rightBtn.style.display="none";modal.style.display="block";return;}if(result.success===true){titleEl.textContent="✅ 保存完了";titleEl.style.color="#4FC3F7";const futan=result.futanNumber||"",jukyusha=result.jukyushaNumber||"";let html='<div style="font-weight:900;color:#4FC3F7;">医療証を保存しました！</div>';if(futan||jukyusha){html+='<div style="margin-top:12px;padding-top:12px;border-top:2px solid #FFD54F;"><div style="font-weight:900;margin-bottom:10px;">《AI解析結果》</div>'+(futan?'<div>負担者番号： <strong>'+escapeHtml(futan)+'</strong></div>':"")+(jukyusha?'<div>受給者番号： <strong>'+escapeHtml(jukyusha)+'</strong></div>':"")+('<div style="margin-top:10px;font-size:0.9em;color:#999;">※ 患者マスターに登録済</div></div>');}else{html+='<div style="color:#666;">番号が取得できませんでした（画像は保存済）。</div>';}contEl.innerHTML=html;leftBtn.style.display="flex";leftBtn.textContent="撕り直す";leftBtn.style.background="#ddd";leftBtn.style.color="#666";leftBtn.onclick=()=>{showRetakeModal();};rightBtn.style.display="";rightBtn.textContent="OK";rightBtn.style.background="#4FC3F7";rightBtn.onclick=()=>{modal.style.display="none";afterIndexOcrFlowDone();};modal.style.display="block";return;}titleEl.textContent="❌ エラー";titleEl.style.color="#FF6F00";contEl.innerHTML='<div style="font-weight:900;color:#FF6F00;">保存に失敗しました</div><div style="margin-top:8px;color:#666;">'+escapeHtml(result.message||"不明なエラー")+'</div>';leftBtn.style.display="none";rightBtn.style.display="";rightBtn.textContent="閉じる";rightBtn.style.background="#999";rightBtn.onclick=()=>{modal.style.display="none";afterIndexOcrFlowDone();};modal.style.display="block";}
+    function afterIndexOcrFlowDone(){if(window.batchMedicalCertQueue){const q=window.batchMedicalCertQueue;window.batchMedicalCertQueue=null;setTimeout(()=>processMedicalCertSequentially(q.patients,q.index+1),300);}}
+    function escapeHtml(s){return String(s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"','&quot;').replaceAll("'","&#039;");}
   </script>
 </body>
 </html>
