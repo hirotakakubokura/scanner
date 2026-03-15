@@ -278,13 +278,18 @@
     // ================================================================
     //  GAS API呼び出し共通関数
     // ================================================================
-    async function callGAS(funcName, params) {
-      const payload = encodeURIComponent(JSON.stringify({ func: funcName, params: params || [] }));
-      const url = GAS_URL + "?payload=" + payload;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      return await res.json();
-    }
+async function callGAS(funcName, params) {
+  const payload = encodeURIComponent(JSON.stringify({ func: funcName, params: params || [] }));
+  const url = GAS_URL + "?payload=" + payload;
+  const res = await fetch(url, { redirect: "follow", method: "GET" });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch(e) {
+    throw new Error("JSONパースエラー: " + text.substring(0, 100));
+  }
+}
 
     // ================================================================
     //  状態変数
