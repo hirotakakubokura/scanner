@@ -640,9 +640,15 @@
     async function indexMedCertUpload() {
       if (!indexMedCertImage) { alert("画像がありません。"); return; }
       closePreviewModal();
-      showSpin("画像をアップロード中...");
+      let _step = "開始前";
       try {
-        // ファイル名生成
+        // ステップ1: トークン取得
+        _step = "①トークン取得";
+        showSpin("トークン取得中...");
+        await ensureUploadInfo();
+
+        // ステップ2: ファイル名生成
+        _step = "②ファイル名生成";
         const now     = new Date();
         const dateStr = now.getFullYear()
                       + ("0"+(now.getMonth()+1)).slice(-2)
@@ -652,10 +658,13 @@
         const safeName = String(MY_NAME).replace(/[\/\\:*?"<>|]/g, "_");
         const fileName = MY_NUM + "_" + safeName + "_" + dateStr + ".jpg";
 
-        // Drive に直接アップロードしてfileIdを取得
+        // ステップ3: Drive直接アップロード
+        _step = "③Driveアップロード";
+        showSpin("画像をアップロード中...");
         const fileId = await uploadImageToDrive(indexMedCertImage, fileName);
 
-        // fileIdをGASに渡してAI解析
+        // ステップ4: GASでAI解析
+        _step = "④AI解析";
         showSpin("AIで解析中...");
         const result = await callGAS("analyzeMedicalCertByFileId", [
           String(MY_NUM), String(MY_NAME), fileId
@@ -665,7 +674,7 @@
 
       } catch(e) {
         hideSpin();
-        alert("保存エラー: " + e.message);
+        alert("保存エラー [" + _step + "]: " + e.message);
       }
     }
 
