@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -273,23 +272,80 @@
     // ================================================================
     const GAS_URL     = "https://script.google.com/macros/s/AKfycbz3LgHl80x5jiZrabVYNFSbRnwSE3O_gYJrtvEtBOezzk7uPUTNWgsfPMBOedO31ioDmA/exec";
     const LIFF_ID     = "2009006702-0vzXPgJs";
-    const APP_VERSION = "4.0.0";
+    const APP_VERSION = "4.1.0";
 
     // ================================================================
     //  GAS API呼び出し共通関数
     // ================================================================
-async function callGAS(funcName, params) {
-  const payload = encodeURIComponent(JSON.stringify({ func: funcName, params: params || [] }));
-  const url = GAS_URL + "?payload=" + payload;
-  const res = await fetch(url, { redirect: "follow", method: "GET" });
-  if (!res.ok) throw new Error("HTTP " + res.status);
-  const text = await res.text();
-  try {
-    return JSON.parse(text);
-  } catch(e) {
-    throw new Error("JSONパースエラー: " + text.substring(0, 100));
-  }
-}
+    async function callGAS(funcName, params) {
+      const payload = encodeURIComponent(JSON.stringify({ func: funcName, params: params || [] }));
+      const url = GAS_URL + "?payload=" + payload;
+      const res = await fetch(url, { redirect: "follow", method: "GET" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const text = await res.text();
+      try { return JSON.parse(text); }
+      catch(e) { throw new Error("JSONパースエラー: " + text.substring(0, 100)); }
+    }
+
+    // ================================================================
+    //  医療証アップロード：Drive API直接アップロード（scannerと同方式）
+    // ================================================================
+    let _uploadToken  = null;
+    let _uploadFolder = null;
+
+    async function ensureUploadInfo() {
+      if (_uploadToken && _uploadFolder) return;
+      const info = await callGAS("getUploadInfo", []);
+      if (!info.success) throw new Error("トークン取得失敗: " + info.error);
+      _uploadToken  = info.token;
+      _uploadFolder = info.folderId;
+    }
+
+    async function uploadImageToDrive(base64DataUrl, fileName) {
+      await ensureUploadInfo();
+      const parts  = base64DataUrl.split(",");
+      const mime   = parts[0].match(/:(.*?);/)[1];
+      const binary = atob(parts[1]);
+      const arr    = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
+      const blob = new Blob([arr], { type: mime });
+      const boundary = "medcert_boundary_" + Date.now();
+      const meta = JSON.stringify({ name: fileName, parents: [_uploadFolder] });
+      const bodyStr = "--" + boundary + "\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"
+        + meta + "\r\n--" + boundary + "\r\nContent-Type: " + mime + "\r\n\r\n";
+      const ending = "\r\n--" + boundary + "--";
+      const bodyBlob = new Blob([bodyStr, blob, ending]);
+      const res = await fetch(
+        "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + _uploadToken,
+            "Content-Type": "multipart/related; boundary=" + boundary
+          },
+          body: bodyBlob
+        }
+      );
+      if (!res.ok) { const err = await res.text(); throw new Error("Drive upload failed: " + err); }
+      const json = await res.json();
+      return json.id;
+    }
+
+    async function callGAS_saveMedicalCert(patientNum, patientName, base64DataUrl) {
+      const now     = new Date();
+      const dateStr = now.getFullYear()
+        + ("0"+(now.getMonth()+1)).slice(-2)
+        + ("0"+now.getDate()).slice(-2)
+        + "_" + ("0"+now.getHours()).slice(-2)
+        + ("0"+now.getMinutes()).slice(-2);
+      const safeName = String(patientName).replace(/[\/\\:*?"<>|]/g, "_");
+      const fileName = patientNum + "_" + safeName + "_" + dateStr + ".jpg";
+      const fileId = await uploadImageToDrive(base64DataUrl, fileName);
+      const result = await callGAS("analyzeMedicalCertByFileId", [
+        String(patientNum), String(patientName), fileId
+      ]);
+      return result;
+    }
 
     // ================================================================
     //  状態変数
@@ -348,6 +404,9 @@ async function callGAS(funcName, params) {
       const cacheShown = restoreFromCacheIfAvailable();
       if (!cacheShown) showSpin("よみこみ中...");
 
+      // トークンを事前取得
+      try { await ensureUploadInfo(); } catch(e) { console.warn("事前トークン取得失敗:", e); }
+
       let liffTimedOut = false;
       const liffTimeout = setTimeout(() => {
         liffTimedOut = true; hideSpin();
@@ -357,14 +416,11 @@ async function callGAS(funcName, params) {
       try {
         await liff.init({ liffId: LIFF_ID });
         if (liffTimedOut) return;
-
         if (!liff.isLoggedIn()) { liff.login(); return; }
 
-        // ★ GitHub Pages上なのでgetProfile()が確実に動く
         const profile = await liff.getProfile();
         clearTimeout(liffTimeout);
         CURRENT_UID = String(profile.userId || "").trim();
-        console.log("uid取得成功:", CURRENT_UID);
 
         if (!CURRENT_UID) {
           hideSpin();
@@ -696,35 +752,21 @@ async function callGAS(funcName, params) {
       document.getElementById('index-medical-modal').style.display='flex';
     }
     function onMedCertFileSelected(input){ const file=input.files&&input.files[0]; if(!file)return; const reader=new FileReader(); reader.onload=function(e){ const dataUrl=e.target.result; if(!dataUrl||dataUrl.length<200){alert("画像の読み込みに失敗しました。");return;} indexMedCertImage=dataUrl; openPreviewModal(indexMedCertImage); }; reader.onerror=function(){alert("画像読み込みエラー。");}; reader.readAsDataURL(file); }
-async function indexMedCertUpload() {
-  if (!indexMedCertImage) { alert("画像がありません。"); return; }
-  closePreviewModal(); showSpin("画像を保存中...");
-  try {
-    // base64部分だけ取り出す
-    let imgData = indexMedCertImage;
-    if (imgData.indexOf("base64,") !== -1) {
-      imgData = imgData.split("base64,")[1];
+
+    // ★ Drive直接アップロード方式（scannerと同じ）
+    async function indexMedCertUpload() {
+      if (!indexMedCertImage) { alert("画像がありません。"); return; }
+      closePreviewModal(); showSpin("画像を保存中...");
+      try {
+        const result = await callGAS_saveMedicalCert(MY_NUM, MY_NAME, indexMedCertImage);
+        hideSpin();
+        showIndexOcrResultModal(result);
+      } catch(e) {
+        hideSpin();
+        alert("保存エラー: " + e.message);
+      }
     }
 
-    // チャンク分割（50000文字ずつ）
-    const CHUNK_SIZE = 50000;
-    const totalChunks = Math.ceil(imgData.length / CHUNK_SIZE);
-    const sessionId = "sess_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
-
-    for (let i = 0; i < totalChunks; i++) {
-      const chunk = imgData.substring(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-      await callGAS("saveMedicalCertChunk", [sessionId, i, totalChunks, chunk, MY_NUM, MY_NAME]);
-    }
-
-    // 全チャンク送信後に結合・保存
-    const result = await callGAS("saveMedicalCertFinalize", [sessionId, MY_NUM, MY_NAME]);
-    hideSpin();
-    showIndexOcrResultModal(result);
-  } catch(e) {
-    hideSpin();
-    alert("保存エラー: " + e.message);
-  }
-}
     function showIndexOcrResultModal(result){
       try{document.getElementById('searchConfirmModal').style.display='none';document.getElementById('index-medical-modal').style.display='none';hideSpin();}catch(e){}
       const modal=document.getElementById('index-ocr-result-modal'),titleEl=document.getElementById('index-ocr-result-title'),contEl=document.getElementById('index-ocr-result-content'),leftBtn=document.getElementById('index-ocr-left-btn'),rightBtn=document.getElementById('index-ocr-right-btn');
