@@ -267,11 +267,16 @@
     async function callGAS(funcName, params) {
       const payload = encodeURIComponent(JSON.stringify({ func: funcName, params: params || [] }));
       const url = GAS_URL + "?payload=" + payload;
-      const res = await fetch(url, { redirect: "follow", method: "GET" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
+      let res;
+      try {
+        res = await fetch(url, { redirect: "follow", method: "GET" });
+      } catch(fetchErr) {
+        throw new Error("GAS fetch失敗[" + funcName + "]: " + (fetchErr.message || fetchErr.name || String(fetchErr)));
+      }
+      if (!res.ok) throw new Error("HTTP " + res.status + " [" + funcName + "]");
       const text = await res.text();
       try { return JSON.parse(text); }
-      catch(e) { throw new Error("JSONパースエラー: " + text.substring(0, 100)); }
+      catch(e) { throw new Error("JSONパースエラー[" + funcName + "]: " + text.substring(0, 100)); }
     }
 
     // =========================================================
