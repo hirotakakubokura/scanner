@@ -696,12 +696,35 @@ async function callGAS(funcName, params) {
       document.getElementById('index-medical-modal').style.display='flex';
     }
     function onMedCertFileSelected(input){ const file=input.files&&input.files[0]; if(!file)return; const reader=new FileReader(); reader.onload=function(e){ const dataUrl=e.target.result; if(!dataUrl||dataUrl.length<200){alert("画像の読み込みに失敗しました。");return;} indexMedCertImage=dataUrl; openPreviewModal(indexMedCertImage); }; reader.onerror=function(){alert("画像読み込みエラー。");}; reader.readAsDataURL(file); }
-    async function indexMedCertUpload(){
-      if(!indexMedCertImage){alert("画像がありません。");return;}
-      closePreviewModal(); showSpin("画像を保存中...");
-      try { const result=await callGAS("saveMedicalCertPhoto",[MY_NUM,MY_NAME,indexMedCertImage]); hideSpin(); showIndexOcrResultModal(result); }
-      catch(e){ hideSpin(); alert("保存エラー: "+e.message); }
+async function indexMedCertUpload() {
+  if (!indexMedCertImage) { alert("画像がありません。"); return; }
+  closePreviewModal(); showSpin("画像を保存中...");
+  try {
+    // base64部分だけ取り出す
+    let imgData = indexMedCertImage;
+    if (imgData.indexOf("base64,") !== -1) {
+      imgData = imgData.split("base64,")[1];
     }
+
+    // チャンク分割（50000文字ずつ）
+    const CHUNK_SIZE = 50000;
+    const totalChunks = Math.ceil(imgData.length / CHUNK_SIZE);
+    const sessionId = "sess_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+
+    for (let i = 0; i < totalChunks; i++) {
+      const chunk = imgData.substring(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+      await callGAS("saveMedicalCertChunk", [sessionId, i, totalChunks, chunk, MY_NUM, MY_NAME]);
+    }
+
+    // 全チャンク送信後に結合・保存
+    const result = await callGAS("saveMedicalCertFinalize", [sessionId, MY_NUM, MY_NAME]);
+    hideSpin();
+    showIndexOcrResultModal(result);
+  } catch(e) {
+    hideSpin();
+    alert("保存エラー: " + e.message);
+  }
+}
     function showIndexOcrResultModal(result){
       try{document.getElementById('searchConfirmModal').style.display='none';document.getElementById('index-medical-modal').style.display='none';hideSpin();}catch(e){}
       const modal=document.getElementById('index-ocr-result-modal'),titleEl=document.getElementById('index-ocr-result-title'),contEl=document.getElementById('index-ocr-result-content'),leftBtn=document.getElementById('index-ocr-left-btn'),rightBtn=document.getElementById('index-ocr-right-btn');
